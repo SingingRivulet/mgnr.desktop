@@ -34,7 +34,7 @@ struct history : public std::enable_shared_from_this<history> {
     std::list<int> noteIds;  //音符，如果是添加的话，将会存在
     int begin;               //起始时间
     double tempo;            //添加删除速度时使用
-    std::list<std::unique_ptr<noteInfo> > notes;
+    std::list<std::unique_ptr<noteInfo>> notes;
 };
 class editTable : public midiMap {
    public:
@@ -46,6 +46,11 @@ class editTable : public midiMap {
     virtual void drawNote_begin() = 0;
     virtual void drawNote(int fx, int fy, int tx, int ty, int volume, const stringPool::stringPtr& info, bool selected, bool onlydisplay = false) = 0;
     virtual void drawNote_end() = 0;
+
+    std::map<std::string, int> trackNameMapper;
+    std::map<int, int> trackInsMapper;
+    void resetTrackMapper();
+    bool checkTrackMapper();
 
     HBB::vec screenToAbs(int x, int y);  //屏幕坐标转midi绝对坐标
 
@@ -100,6 +105,7 @@ class editTable : public midiMap {
     std::string loadMidi_preprocess(const std::string& str, const std::string& script, int tone);
     std::string exportString();
     void exportMidi(const std::string& str);
+    void exportMidiWithTrackMapper(const std::string& filename);
 
     float lookAtX;  //瞄准位置（左边缘中心点）
     float lookAtY;
@@ -170,6 +176,7 @@ class editTable : public midiMap {
     }
 
     int getInstrumentId(const stringPool::stringPtr& n);
+    std::tuple<int, int, bool> getInstrumentTrack(const stringPool::stringPtr& n);
     void loadInstrument(int id);
     inline void loadInstrument(const stringPool::stringPtr& n) {
         loadInstrument(getInstrumentId(n));
@@ -208,8 +215,8 @@ class editTable : public midiMap {
     }
 
    private:
-    std::list<std::shared_ptr<history> > histories_undo;
-    std::list<std::shared_ptr<history> > histories_redo;
+    std::list<std::shared_ptr<history>> histories_undo;
+    std::list<std::shared_ptr<history>> histories_redo;
 };
 }  // namespace mgnr
 #endif

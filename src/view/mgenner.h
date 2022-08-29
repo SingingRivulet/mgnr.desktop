@@ -114,6 +114,12 @@ class mgenner : public mgnr::synth {
     char midiDescriptionBuffer_content[4096];
     std::string midiDescriptionBuffer_title;
 
+    bool show_trackMap_window = false;
+    std::list<std::tuple<std::string, int, int>> trackMapBuffer;
+    bool trackMapBuffer_closeWithSave = false;
+    void trackMapBuffer_init();
+    void trackMapBuffer_save();
+
     ImGui::FileBrowser fileDialog_loadMidi;
     ImGui::FileBrowser fileDialog_saveMidi;
 
