@@ -1,9 +1,12 @@
 #pragma once
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <fluidsynth.h>
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_sdlrenderer.h>
+#include <iostream>
+#include "imfilebrowser.h"
 #include "sampler.h"
 #include "synth.h"
 
@@ -114,6 +117,9 @@ class mgenner : public mgnr::synth {
     char midiDescriptionBuffer_content[4096];
     std::string midiDescriptionBuffer_title;
 
+    ImGui::FileBrowser fileDialog_loadMidi;
+    ImGui::FileBrowser fileDialog_saveMidi;
+
     char defaultInfoBuffer[128];
     void ui();
 
@@ -141,6 +147,34 @@ class mgenner : public mgnr::synth {
             for (auto& it : this->selected) {
                 it->info = this->strPool.create(str);
             }
+        }
+    }
+
+    inline void loadMidiDialog() {
+        fileDialog_loadMidi.SetTypeFilters({".mid"});
+        fileDialog_loadMidi.SetPwd("./");
+        fileDialog_loadMidi.Open();
+    }
+    inline void saveMidiDialog() {
+        fileDialog_saveMidi.SetTypeFilters({".mid"});
+        fileDialog_saveMidi.SetPwd("./");
+        fileDialog_saveMidi.Open();
+    }
+
+    std::string midiFilePath = "";
+    inline void loadMidiFile(const std::string& path) {
+        midiFilePath = path;
+        loadMidi(path);
+    }
+    inline void saveMidiFile(const std::string& path) {
+        midiFilePath = path;
+        exportMidi(path);
+    }
+    inline void saveMidiFile() {
+        if (!midiFilePath.empty()) {
+            saveMidiFile(midiFilePath);
+        } else {
+            saveMidiDialog();
         }
     }
 };

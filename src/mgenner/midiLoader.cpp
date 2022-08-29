@@ -166,7 +166,7 @@ void editTable::loadInstrument(int id) {
         return;
     instrumentLoaded[id] = true;
 
-    printf("mgenner:require instrument:%s", instrumentName[id]);
+    printf("mgenner:require instrument:%s\n", instrumentName[id]);
 }
 int editTable::getInstrumentId(const stringPool::stringPtr& name) {
     char n[128];
@@ -194,11 +194,11 @@ void editTable::loadMidi(const std::string& str) {
 
     TPQ = midifile.getTicksPerQuarterNote();
     rebuildNoteLen();
-    printf("mgenner:TPQ:%d", TPQ);
+    printf("mgenner:TPQ:%d\n", TPQ);
     int tracks = midifile.getTrackCount();
 
     if (tracks > 1) {
-        printf("mgenner:TRACKS:%d", tracks);
+        printf("mgenner:TRACKS:%d\n", tracks);
     }
 
     std::set<int> iset;
@@ -240,7 +240,7 @@ void editTable::loadMidi(const std::string& str) {
     }
 
     auto numTracks = midifile.getNumTracks();
-    printf("mgenner:load controls numTracks:%d", numTracks);
+    printf("mgenner:load controls numTracks:%d\n", numTracks);
     for (int trackIndex = 0; trackIndex < numTracks; ++trackIndex) {
         for (int i = 0; i < midifile.getNumEvents(trackIndex); i++) {
             if (midifile.getEvent(trackIndex, i).isTempo()) {  //是设置时间
@@ -250,12 +250,12 @@ void editTable::loadMidi(const std::string& str) {
         }
     }
 
-    printf("mgenner:load instruments");
+    printf("mgenner:load instruments\n");
     for (auto it : iset) {
         loadInstrument(it);
     }
 
-    printf("mgenner:load midi success");
+    printf("mgenner:load midi success\n");
 }
 
 void editTable::onScriptCmd(const char*) {}
@@ -271,7 +271,7 @@ std::string editTable::loadMidi_preprocess(const std::string& str, const std::st
     if (luaL_loadstring(lua, script.c_str()) || lua_pcall(lua, 0, 0, 0)) {
         //载入脚本
         std::string res = lua_tostring(lua, -1);
-        printf("mgenner:script:%s", res.c_str());
+        printf("mgenner:script:%s\n", res.c_str());
         lua_close(lua);
         return res;
     }
@@ -308,7 +308,7 @@ std::string editTable::loadMidi_preprocess(const std::string& str, const std::st
 
     lua_pushcfunction(lua, [](lua_State* L) -> int {
         const char* str = luaL_checkstring(L, 1);
-        printf("mgenner:script_log:%s", str);
+        printf("mgenner:script_log:%s\n", str);
         return 0;
     });
     lua_setglobal(lua, "log_print");
@@ -335,7 +335,7 @@ std::string editTable::loadMidi_preprocess(const std::string& str, const std::st
     //取得函数
     lua_getglobal(lua, "process");
     if (!lua_isfunction(lua, -1)) {
-        printf("mgenner:function 'process' no found");
+        printf("mgenner:function 'process' no found\n");
         lua_close(lua);
         return "function 'process' no found";
     }
@@ -346,11 +346,11 @@ std::string editTable::loadMidi_preprocess(const std::string& str, const std::st
 
     TPQ = midifile.getTicksPerQuarterNote();
     rebuildNoteLen();
-    printf("mgenner:TPQ:%d", TPQ);
+    printf("mgenner:TPQ:%d\n", TPQ);
     int tracks = midifile.getTrackCount();
 
     if (tracks > 1) {
-        printf("mgenner:TRACKS:%d", tracks);
+        printf("mgenner:TRACKS:%d\n", tracks);
     }
 
     std::set<int> iset;
@@ -423,11 +423,11 @@ std::string editTable::loadMidi_preprocess(const std::string& str, const std::st
 
     if (lua_pcall(lua, 3, 0, 0)) {
         res = lua_tostring(lua, -1);
-        printf("mgenner:script:%s", res.c_str());
+        printf("mgenner:script:%s\n", res.c_str());
     }
 
     auto numTracks = midifile.getNumTracks();
-    printf("mgenner:load controls numTracks:%d", numTracks);
+    printf("mgenner:load controls numTracks:%d\n", numTracks);
     for (int trackIndex = 0; trackIndex < numTracks; ++trackIndex) {
         for (int i = 0; i < midifile.getNumEvents(trackIndex); i++) {
             if (midifile.getEvent(trackIndex, i).isTempo()) {  //是设置时间
@@ -437,14 +437,14 @@ std::string editTable::loadMidi_preprocess(const std::string& str, const std::st
         }
     }
 
-    printf("mgenner:load instruments");
+    printf("mgenner:load instruments\n");
     for (auto it : iset) {
         loadInstrument(it);
     }
 
     lua_close(lua);
 
-    printf("mgenner:load midi success");
+    printf("mgenner:load midi success\n");
 
     return res;
 }

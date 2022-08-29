@@ -147,13 +147,22 @@ void mgenner::processEvents() {
                     }
                     break;
                 case SDLK_s:
-                    selectByBox = !selectByBox;
+                    if (button_ctrl) {
+                        if (button_shift) {
+                            saveMidiDialog();
+                        } else {
+                            saveMidiFile();
+                        }
+                    } else {
+                        selectByBox = !selectByBox;
+                    }
                     break;
                 case SDLK_c:
                     copy();
                     break;
                 case SDLK_v:
                     pasteMode = true;
+                    selectByBox = false;
                     break;
                 case SDLK_z:
                     if (button_ctrl) {
@@ -170,6 +179,11 @@ void mgenner::processEvents() {
                 case SDLK_w:
                     noteLength *= 2;
                     break;
+                case SDLK_o:
+                    if (button_ctrl) {
+                        loadMidiDialog();
+                    }
+                    break;
                 case SDLK_EQUALS:
                     if (show_edit_window) {
                         resizeSelected(1);
@@ -178,6 +192,14 @@ void mgenner::processEvents() {
                 case SDLK_MINUS:
                     if (show_edit_window) {
                         resizeSelected(-1);
+                    }
+                    break;
+                case SDLK_SPACE:
+                    if (!playingStatus) {
+                        playStart();
+
+                    } else {
+                        playStop();
                     }
                     break;
             }

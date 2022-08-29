@@ -802,7 +802,7 @@ void editTable::selectedToRelative(std::string& out) {
 }
 
 void editTable::undo() {
-    printf("mgenner:undo");
+    printf("mgenner:undo\n");
     editStatus = true;
     auto it = histories_undo.rbegin();
     if (it != histories_undo.rend()) {
@@ -847,7 +847,7 @@ void editTable::undo() {
 }
 
 void editTable::redo() {
-    printf("mgenner:redo");
+    printf("mgenner:redo\n");
     editStatus = true;
     auto it = histories_redo.rbegin();
     if (it != histories_redo.rend()) {

@@ -1,8 +1,4 @@
 #include "mgenner.h"
-#define CHECK_FOCUS                                                                       \
-    if (ImGui::IsItemFocused() || ImGui::IsWindowFocused() || ImGui::IsWindowHovered()) { \
-        focusCanvas = false;                                                              \
-    }
 
 void mgenner::ui() {
     {
@@ -25,13 +21,49 @@ void mgenner::ui() {
                 playStop();
             }
         }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("空格键");
+        }
         ImGui::SameLine();
         if (ImGui::Button("结尾")) {
             lookAtX = noteTimeMax;
         }
+        ImGui::SameLine();
+        if (ImGui::Button("载入")) {
+            loadMidiDialog();
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("ctrl+o");
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("保存")) {
+            saveMidiFile();
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("ctrl+s");
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("另存为")) {
+            saveMidiDialog();
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("ctrl+shift+s");
+        }
+
+        if (fileDialog_loadMidi.HasSelected()) {
+            loadMidiFile(fileDialog_loadMidi.GetSelected().string());
+            fileDialog_loadMidi.ClearSelected();
+        }
+        if (fileDialog_saveMidi.HasSelected()) {
+            printf("mgenner:save:%s\n", fileDialog_saveMidi.GetSelected().string().c_str());
+            saveMidiFile(fileDialog_saveMidi.GetSelected().string());
+            fileDialog_saveMidi.ClearSelected();
+        }
 
         if (ImGui::Checkbox("编辑模式", &show_edit_window)) {
-            show_trackSelect_window = show_edit_window;
+            if (show_edit_window) {
+                show_trackSelect_window = true;
+            }
         }
 
         if (ImGui::Checkbox("聚焦音轨", &focus_note)) {
@@ -43,6 +75,9 @@ void mgenner::ui() {
                 infoFilter.clear();
             }
         }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("隐藏其他音轨，仅显示此音轨");
+        }
 
         ImGui::End();
     }
@@ -51,12 +86,66 @@ void mgenner::ui() {
         ImGui::Begin("编辑", &show_edit_window, ImGuiWindowFlags_AlwaysAutoResize);
         CHECK_FOCUS;
 
+        {
+            if (ImGui::Button("撤销")) {
+                undo();
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("ctrl+z");
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("重做")) {
+                redo();
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("ctrl+shift+z");
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("粘贴")) {
+                pasteMode = true;
+                selectByBox = false;
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("ctrl+v");
+            }
+
+            if (ImGui::Button("删除音符")) {
+                removeSelected();
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("back/delete");
+            }
+            ImGui::SameLine();
+            if (selectByBox) {
+                if (ImGui::Button("取消框选")) {
+                    selectByBox = false;
+                }
+            } else {
+                if (ImGui::Button("框选模式")) {
+                    selectByBox = true;
+                }
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("s键");
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("清除选择")) {
+                clearSelected();
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("鼠标右键");
+            }
+        }
+
         if (ImGui::InputText("音轨命名", defaultInfoBuffer, sizeof(defaultInfoBuffer))) {
             if (strlen(defaultInfoBuffer) <= 1) {
             } else {
                 setInfo(defaultInfoBuffer);
                 show_trackSelect_window = true;
             }
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("改变音轨命名将同时改变所有已选中的音符");
         }
 
         int sec = section;
@@ -87,53 +176,6 @@ void mgenner::ui() {
             noteWidth = noteWidth_items_lens[noteWidth_items_id];
             rebuildNoteLen();
         }
-
-        if (ImGui::BeginTable("split", 2)) {
-            ImGui::TableNextColumn();
-            if (ImGui::Button("删除音符")) {
-                removeSelected();
-            }
-            ImGui::SameLine();
-            ImGui::Text("back/delete");
-            ImGui::TableNextColumn();
-            if (selectByBox) {
-                if (ImGui::Button("取消框选")) {
-                    selectByBox = false;
-                }
-            } else {
-                if (ImGui::Button("框选模式")) {
-                    selectByBox = true;
-                }
-            }
-            ImGui::SameLine();
-            ImGui::Text("s");
-            ImGui::TableNextColumn();
-            if (ImGui::Button("清除选择")) {
-                clearSelected();
-            }
-            ImGui::SameLine();
-            ImGui::Text("鼠标右键");
-            ImGui::TableNextColumn();
-            if (ImGui::Button("撤销")) {
-                undo();
-            }
-            ImGui::SameLine();
-            ImGui::Text("ctrl+z");
-            ImGui::TableNextColumn();
-            if (ImGui::Button("重做")) {
-                redo();
-            }
-            ImGui::SameLine();
-            ImGui::Text("ctrl+shift+z");
-            ImGui::TableNextColumn();
-            if (ImGui::Button("粘贴")) {
-                pasteMode = true;
-            }
-            ImGui::SameLine();
-            ImGui::Text("ctrl+v");
-
-            ImGui::EndTable();
-        }
         ImGui::End();
     }
     if (show_trackSelect_window) {
@@ -142,10 +184,19 @@ void mgenner::ui() {
         ImGui::Begin("选择音轨", &show_trackSelect_window);
         CHECK_FOCUS;
 
+        constexpr char editTractContent[] =
+            "编辑状态下更换音轨会同时将所有已选\n"
+            "的音符设置为此音轨。\n"
+            "如无须此操作，请先取消选中所有音符\n"
+            "（在midi界面上单击鼠标右键）";
+
         if (ImGui::CollapsingHeader("用户音轨", ImGuiTreeNodeFlags_DefaultOpen)) {
             for (auto& it : strPool.indexer) {
                 if (ImGui::Selectable(it.first.c_str(), it.first == defaultInfo.value())) {
                     setInfo(it.first);
+                }
+                if (ImGui::IsItemHovered() && show_edit_window && !selected.empty()) {
+                    ImGui::SetTooltip(editTractContent);
                 }
             }
         }
@@ -153,6 +204,9 @@ void mgenner::ui() {
             for (int i = 0; i < 128; ++i) {
                 if (ImGui::Selectable(mgnr::instrumentName[i], false)) {
                     setInfo(mgnr::instrumentName[i]);
+                }
+                if (ImGui::IsItemHovered() && show_edit_window && !selected.empty()) {
+                    ImGui::SetTooltip(editTractContent);
                 }
             }
         }
@@ -323,10 +377,16 @@ void mgenner::ui() {
         if (ImGui::Button("复制")) {
             copy();
         }
-        ImGui::SameLine();
-        ImGui::Text("ctrl+c");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("ctrl+c");
+        }
 
         ImGui::End();
+    }
+    fileDialog_saveMidi.Display();
+    fileDialog_loadMidi.Display();
+    if (ImGui::IsAnyItemHovered() || !fileDialog_loadMidi.focusCanvas) {
+        focusCanvas = false;
     }
     if (!show_edit_window) {
         pasteMode = false;

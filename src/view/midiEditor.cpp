@@ -1,5 +1,6 @@
 #include "mgenner.h"
-mgenner::mgenner() {
+mgenner::mgenner()
+    : fileDialog_saveMidi(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir) {
     printf("mgenner:init...\n");
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
     window = SDL_CreateWindow("mgnr",
@@ -26,6 +27,9 @@ mgenner::mgenner() {
 
     setSection(4);
     toneMapInit();
+
+    fileDialog_loadMidi.SetTitle("选择文件");
+
     scroll_texture = SDL_CreateTexture(renderer,
                                        SDL_PIXELFORMAT_ABGR8888,
                                        SDL_TEXTUREACCESS_TARGET, 1024, 30);
