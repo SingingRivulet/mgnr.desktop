@@ -63,39 +63,36 @@ class mgenner : public mgnr::synth {
     void rebuildNoteLen() override;
 
     void onLoadName(const mgnr::stringPool::stringPtr& name) override;
+    void setInfo(const std::string& str);
 
+    //////////////////////////////////////////////////////////////////
+    //绘制
     void drawNote_begin() override;
-
     void drawNote(int fx, int fy, int tx, int ty, int volume, const mgnr::stringPool::stringPtr& info, bool selected, bool onlydisplay) override;
-
     void drawNote_end() override;
-
     void drawTableRaw(int from, int to, int left, int right, int t) override;
-
     void drawTimeCol(float p) override;
-
     void drawSectionCol(float p, int n) override;
-
     void drawTempo(float p, double t) override;
-
     void drawDescriptions(float p, const mgnr::stringPool::stringPtr& title, const std::string& content) override;
-
     void drawDescriptionsPadd() override;
-
     void drawTempoPadd() override;
-
     void drawScroll() override;
-
-    void onSetChannelIns(int c, int ins) override;
-    void callSynthNoteOn(const char* info, int channel, int tone, int vol) override;
-    void callSynthNoteOff(const char* info, int channel, int tone) override;
-    void onSelectedChange(int len) override;
-    void onScriptCmd(const char* cmd) override;
-
     void drawCaption(float p, const std::string& s) override;
-
     void draw();
-
+    void hideMode();
+    SDL_Texture* getText(const std::string& str, const SDL_Color& textColor, SDL_Rect& rect);
+    //////////////////////////////////////////////////////////////////
+    //滚动条
+    int hlen;
+    int nmax;
+    int nmin;
+    void scrollBuilder_onGetNoteArea() override;
+    void scrollBuilder_onGetAllNotePos(mgnr::note* n) override;
+    void scrollBuilder_onSwap() override;
+    void buildScroll();
+    //////////////////////////////////////////////////////////////////
+    ///ui相关
     bool show_edit_window = false;
     bool show_trackSelect_window = false;
 
@@ -121,60 +118,30 @@ class mgenner : public mgnr::synth {
     ImGui::FileBrowser fileDialog_saveMidi;
 
     char defaultInfoBuffer[128];
-    void ui();
-
-    void playStep();
-    int hlen;
-    int nmax;
-    int nmin;
-    void scrollBuilder_onGetNoteArea() override;
-    void scrollBuilder_onGetAllNotePos(mgnr::note* n) override;
-    void scrollBuilder_onSwap() override;
-    void buildScroll();
-    void hideMode();
-
-    SDL_Texture* getText(const std::string& str, const SDL_Color& textColor, SDL_Rect& rect);
-
-    inline void setInfo(const std::string& str) {
-        if (str.empty()) {
-            return;
-        }
-        this->defaultInfo = this->strPool.create(str);
-        if (!this->infoFilter.empty()) {
-            this->infoFilter = this->defaultInfo;
-        }
-        if (show_edit_window) {
-            for (auto& it : this->selected) {
-                it->info = this->strPool.create(str);
-            }
-        }
-    }
-
-    inline void loadMidiDialog() {
-        fileDialog_loadMidi.SetTypeFilters({".mid"});
-        fileDialog_loadMidi.SetPwd("./");
-        fileDialog_loadMidi.Open();
-    }
-    inline void saveMidiDialog() {
-        fileDialog_saveMidi.SetTypeFilters({".mid"});
-        fileDialog_saveMidi.SetPwd("./");
-        fileDialog_saveMidi.Open();
-    }
+    void ui_init();
+    void ui_loop();
+    void ui_shutdown();
 
     std::string midiFilePath = "";
-    inline void loadMidiFile(const std::string& path) {
-        midiFilePath = path;
-        loadMidi(path);
-    }
-    inline void saveMidiFile(const std::string& path) {
-        midiFilePath = path;
-        exportMidi(path);
-    }
-    inline void saveMidiFile() {
-        if (!midiFilePath.empty()) {
-            saveMidiFile(midiFilePath);
-        } else {
-            saveMidiDialog();
-        }
-    }
+
+    void loadMidiDialog();
+    void saveMidiDialog();
+    void loadMidiFile(const std::string& path);
+    void saveMidiFile(const std::string& path);
+    void saveMidiFile();
+
+    /////////////////////////////////////////////////////////////////////////////
+    //合成器
+    fluid_settings_t* settings = nullptr;
+    fluid_synth_t* synth = nullptr;
+    fluid_audio_driver_t* adriver = nullptr;
+    int sfont_id;
+    void synth_init();
+    void synth_shutdown();
+    void playStep();
+    void onSetChannelIns(int c, int ins) override;
+    void callSynthNoteOn(const char* info, int channel, int tone, int vol) override;
+    void callSynthNoteOff(const char* info, int channel, int tone) override;
+    void onSelectedChange(int len) override;
+    void onScriptCmd(const char* cmd) override;
 };

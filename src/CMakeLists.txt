@@ -24,6 +24,7 @@ add_executable(mgnr
     ./view/midiEditor.cpp
     ./view/ui.cpp
     ./view/events.cpp
+    ./view/synth.cpp
 
     ./mgenner/Options.cpp
     ./mgenner/midiMap.cpp
@@ -86,8 +87,9 @@ add_executable(mgnr
 )
 
 target_link_libraries(mgnr
-${SDL2_LIBRARIES}
-${sdl2_ttf_LIBRARY}
+    ${SDL2_LIBRARIES}
+    ${sdl2_ttf_LIBRARY}
+    fluidsynth
 )
 
 set_target_properties(mgnr PROPERTIES OUT_NAME "mgnr")

@@ -93,9 +93,9 @@ void mgenner::processEvents() {
                     }
                 } else {
                     if (event.wheel.y < 0) {
-                        lookAtX += noteLength * 20;
+                        lookAtX += 200 / noteLength;
                     } else if (event.wheel.y > 0) {
-                        lookAtX -= noteLength * 20;
+                        lookAtX -= 200 / noteLength;
                     }
                 }
             } else if (mouse_y > windowHeight - 60) {
@@ -108,9 +108,9 @@ void mgenner::processEvents() {
                     }
                 } else {
                     if (event.wheel.y < 0) {
-                        lookAtY -= 0.07 * noteHeight;
+                        lookAtY -= 50 / noteHeight;
                     } else if (event.wheel.y > 0) {
-                        lookAtY += 0.07 * noteHeight;
+                        lookAtY += 50 / noteHeight;
                     }
                 }
             } else {

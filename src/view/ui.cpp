@@ -1,6 +1,26 @@
 #include "mgenner.h"
 
-void mgenner::ui() {
+void mgenner::ui_init() {
+    //创建imgui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+
+    io.Fonts->AddFontFromFileTTF("../datas/font/font.ttf",
+                                 20.f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
+    ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+    ImGui_ImplSDLRenderer_Init(renderer);
+    fileDialog_loadMidi.SetTitle("选择文件");
+    fileDialog_saveMidi.SetTitle("保存文件");
+}
+
+void mgenner::ui_shutdown() {
+    ImGui_ImplSDLRenderer_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+}
+
+void mgenner::ui_loop() {
     {
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(300, 100), ImGuiCond_FirstUseEver);
@@ -144,8 +164,17 @@ void mgenner::ui() {
                 show_trackSelect_window = true;
             }
         }
-        if (ImGui::IsItemHovered()) {
+        if (ImGui::IsItemHovered() && !selected.empty()) {
             ImGui::SetTooltip("改变音轨命名将同时改变所有已选中的音符");
+        }
+
+        if (ImGui::SliderInt("响度", &defaultVolume, 1, 127)) {
+            for (auto& it : this->selected) {
+                it->volume = defaultVolume;
+            }
+        }
+        if (ImGui::IsItemHovered() && !selected.empty()) {
+            ImGui::SetTooltip("改变响度将同时改变所有已选中的音符");
         }
 
         int sec = section;
@@ -176,6 +205,7 @@ void mgenner::ui() {
             noteWidth = noteWidth_items_lens[noteWidth_items_id];
             rebuildNoteLen();
         }
+
         ImGui::End();
     }
     if (show_trackSelect_window) {
@@ -357,7 +387,7 @@ void mgenner::ui() {
     }
 
     if (!selected.empty() && show_edit_window) {
-        ImGui::SetNextWindowPos(ImVec2(240, 20), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(windowWidth / 2, windowHeight / 2), ImGuiCond_FirstUseEver);
         ImGui::Begin("编辑音符",
                      nullptr,
                      ImGuiWindowFlags_AlwaysAutoResize |
@@ -385,7 +415,9 @@ void mgenner::ui() {
     }
     fileDialog_saveMidi.Display();
     fileDialog_loadMidi.Display();
-    if (ImGui::IsAnyItemHovered() || !fileDialog_loadMidi.focusCanvas) {
+    if (ImGui::IsAnyItemHovered() ||
+        !fileDialog_loadMidi.focusCanvas ||
+        !fileDialog_saveMidi.focusCanvas) {
         focusCanvas = false;
     }
     if (!show_edit_window) {
@@ -393,5 +425,32 @@ void mgenner::ui() {
     }
     if (!focusCanvas) {
         displayBuffer.clear();
+    }
+}
+
+void mgenner::loadMidiDialog() {
+    fileDialog_loadMidi.SetTypeFilters({".mid"});
+    fileDialog_loadMidi.SetPwd("./");
+    fileDialog_loadMidi.Open();
+}
+void mgenner::saveMidiDialog() {
+    fileDialog_saveMidi.SetTypeFilters({".mid"});
+    fileDialog_saveMidi.SetPwd("./");
+    fileDialog_saveMidi.Open();
+}
+
+void mgenner::loadMidiFile(const std::string& path) {
+    midiFilePath = path;
+    loadMidi(path);
+}
+void mgenner::saveMidiFile(const std::string& path) {
+    midiFilePath = path;
+    exportMidi(path);
+}
+void mgenner::saveMidiFile() {
+    if (!midiFilePath.empty()) {
+        saveMidiFile(midiFilePath);
+    } else {
+        saveMidiDialog();
     }
 }

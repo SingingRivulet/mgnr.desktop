@@ -286,6 +286,7 @@ int editTable::clickToSelect(int x, int y) {
                 if (n->info != self->defaultInfo) {
                     printf("mgenner:use note name:%s\n", n->info.c_str());
                     self->defaultInfo = n->info;
+                    self->defaultVolume = n->volume;
                 }
 
             } else {

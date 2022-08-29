@@ -16,19 +16,11 @@ mgenner::mgenner()
     font = TTF_OpenFont("../datas/font/font.ttf", 20);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
 
-    //创建imgui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.Fonts->AddFontFromFileTTF("../datas/font/font.ttf",
-                                 20.f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
-    ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
-    ImGui_ImplSDLRenderer_Init(renderer);
+    ui_init();
+    synth_init();
 
     setSection(4);
     toneMapInit();
-
-    fileDialog_loadMidi.SetTitle("选择文件");
 
     scroll_texture = SDL_CreateTexture(renderer,
                                        SDL_PIXELFORMAT_ABGR8888,
@@ -46,10 +38,8 @@ mgenner::~mgenner() {
     if (scroll_texture_buffer) {
         SDL_DestroyTexture(scroll_texture_buffer);
     }
-
-    ImGui_ImplSDLRenderer_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
+    ui_shutdown();
+    synth_shutdown();
     if (renderer) {
         SDL_DestroyRenderer(renderer);
     }
@@ -397,15 +387,6 @@ void mgenner::drawScroll() {
     }
 }
 
-void mgenner::onSetChannelIns(int c, int ins) {
-    // TODO
-}
-void mgenner::callSynthNoteOn(const char* info, int channel, int tone, int vol) {
-    // TODO
-}
-void mgenner::callSynthNoteOff(const char* info, int channel, int tone) {
-    // TODO
-}
 void mgenner::onSelectedChange(int len) {
     // TODO
 }
@@ -427,7 +408,7 @@ void mgenner::draw() {
     ImGui_ImplSDLRenderer_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
-    ui();
+    ui_loop();
 
     SDL_RenderClear(renderer);
     this->render();
@@ -524,4 +505,18 @@ SDL_Texture* mgenner::getText(const std::string& str,
             msg->w, msg->h);
     SDL_FreeSurface(msg);
     return tex;
+}
+void mgenner::setInfo(const std::string& str) {
+    if (str.empty()) {
+        return;
+    }
+    this->defaultInfo = this->strPool.create(str);
+    if (!this->infoFilter.empty()) {
+        this->infoFilter = this->defaultInfo;
+    }
+    if (show_edit_window) {
+        for (auto& it : this->selected) {
+            it->info = this->strPool.create(str);
+        }
+    }
 }
