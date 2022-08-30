@@ -176,7 +176,7 @@ class editTable : public midiMap {
     }
 
     int getInstrumentId(const stringPool::stringPtr& n);
-    std::tuple<int, int, bool> getInstrumentTrack(const stringPool::stringPtr& n);
+    std::tuple<int, int, bool> getInstrumentTrack(const char* name);
     void loadInstrument(int id);
     inline void loadInstrument(const stringPool::stringPtr& n) {
         loadInstrument(getInstrumentId(n));

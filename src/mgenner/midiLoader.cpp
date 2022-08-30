@@ -186,10 +186,10 @@ int editTable::getInstrumentId(const stringPool::stringPtr& name) {
         return it->second;
     }
 }
-std::tuple<int, int, bool> editTable::getInstrumentTrack(const stringPool::stringPtr& name) {
+std::tuple<int, int, bool> editTable::getInstrumentTrack(const char* name) {
     char n[128];
     bzero(n, 128);
-    snprintf(n, 128, "%s", name.c_str());
+    snprintf(n, 128, "%s", name);
     int i;
     for (i = 0; i < 128; ++i) {
         if (n[i] == '\0') {
@@ -200,15 +200,28 @@ std::tuple<int, int, bool> editTable::getInstrumentTrack(const stringPool::strin
         }
     }
     ++i;
-    auto it = instrument2Id.find(n);
-    if (it == instrument2Id.end()) {
-        return std::tuple<int, int, bool>(0, 0, false);
-    }
+
+    bool haveTrack = true;
+    int t = 0;
     if (i >= 128 || n[i] == '\0') {
-        return std::tuple<int, int, bool>(0, it->second, false);
+        haveTrack = false;
+    } else {
+        if (sscanf(&n[i], "%d", &t) < 1) {
+            haveTrack = false;
+        }
+        if (t > 1024) {
+            t = 1024;
+        }
+        if (t < 0) {
+            t = 0;
+        }
     }
 
-    return std::tuple<int, int, bool>(atoi(&n[i]), it->second, true);
+    auto it = instrument2Id.find(n);
+    if (it == instrument2Id.end()) {
+        return std::tuple<int, int, bool>(t, -1, haveTrack);
+    }
+    return std::tuple<int, int, bool>(t, it->second, haveTrack);
 }
 
 void editTable::resetTrackMapper() {
@@ -216,21 +229,56 @@ void editTable::resetTrackMapper() {
     trackInsMapper.clear();
     checkTrackMapper();
 }
+#define HAVE_TRACK 2
+#define INSTRUMENT_ID 1
+#define TRACK_ID 0
 bool editTable::checkTrackMapper() {
     bool res = true;
+    int maxTrack = -1;
+    std::vector<std::string> mapperArr;
     for (auto it : notes) {
-        auto t = getInstrumentTrack(it->info);
-        auto it_n = trackNameMapper.find(it->info.value());
-        if (it_n == trackNameMapper.end()) {
-            trackNameMapper[it->info.value()] = std::get<0>(t);
-            printf("mgenner:checkTrackMapper:info no found:%s\n", it->info.c_str());
-            res = false;
+        if (trackNameMapper.find(it->info.value()) == trackNameMapper.end()) {
+            auto t = getInstrumentTrack(it->info.c_str());
+            if (std::get<HAVE_TRACK>(t)) {
+                //有音轨
+                trackNameMapper[it->info.value()] = std::get<TRACK_ID>(t);
+                if (std::get<TRACK_ID>(t) > maxTrack) {
+                    maxTrack = std::get<TRACK_ID>(t);
+                }
+            } else {
+                //自动分配音轨
+                res = false;
+                mapperArr.push_back(it->info.value());
+            }
         }
-        auto it_i = trackInsMapper.find(std::get<0>(t));
-        if (it_i == trackInsMapper.end()) {
-            trackInsMapper[std::get<0>(t)] = std::get<1>(t);
-            printf("mgenner:checkTrackMapper:track no found:%d\n", std::get<0>(t));
+    }
+    //分配音轨
+    int i = maxTrack + 1;
+    for (auto& it : mapperArr) {
+        trackNameMapper[it] = i;
+        ++i;
+    }
+    //检查乐器
+    for (auto& it : trackNameMapper) {
+        if (trackInsMapper.find(it.second) == trackInsMapper.end()) {
             res = false;
+            auto t = getInstrumentTrack(it.first.c_str());
+            if (std::get<INSTRUMENT_ID>(t) >= 0) {
+                trackInsMapper[it.second] = std::get<INSTRUMENT_ID>(t);
+            }
+        }
+    }
+    for (auto& it : trackNameMapper) {
+        if (trackInsMapper.find(it.second) == trackInsMapper.end()) {
+            res = false;
+            auto t = getInstrumentTrack(it.first.c_str());
+            if (std::get<INSTRUMENT_ID>(t) < 0) {
+                trackInsMapper[it.second] = 0;
+                printf("mgenner:checkTrackMapper:track no instrument:%d\n", it.second);
+                res = false;
+            } else {
+                trackInsMapper[it.second] = std::get<INSTRUMENT_ID>(t);
+            }
         }
     }
     return res;
@@ -579,7 +627,7 @@ void editTable::exportMidi(const std::string& filename) {
         std::string markerMessage{};
     };
 
-    std::map<int, std::pair<int, std::vector<noteMap_t*> > > noteMap;
+    std::map<int, std::pair<int, std::vector<noteMap_t*>>> noteMap;
 
     //添加音符
     for (auto it : notes) {
@@ -739,12 +787,14 @@ void editTable::exportMidiWithTrackMapper(const std::string& filename) {
 
     struct noteMap_t {
         int tone, volume, time;
+        int track, ins, channel = -1;
+        noteMap_t* pair = nullptr;
         bool isNoteOn;
         bool isMarker;
         std::string markerMessage{};
     };
 
-    std::map<int, std::pair<int, std::vector<noteMap_t*> > > noteMap;
+    std::vector<noteMap_t*> noteMap;
 
     //添加音符
     for (auto it : notes) {
@@ -764,6 +814,8 @@ void editTable::exportMidiWithTrackMapper(const std::string& filename) {
                 p1->time = it->begin;
                 p1->isNoteOn = true;
                 p1->isMarker = false;
+                p1->ins = ins;
+                p1->track = track;
 
                 auto p2 = new noteMap_t;
                 p2->tone = it->tone;
@@ -771,11 +823,14 @@ void editTable::exportMidiWithTrackMapper(const std::string& filename) {
                 p2->time = it->begin + it->delay;
                 p2->isNoteOn = false;
                 p2->isMarker = false;
+                p2->ins = ins;
+                p2->track = track;
 
-                auto& lst = noteMap[track];
-                lst.first = ins;
-                lst.second.push_back(p1);
-                lst.second.push_back(p2);
+                p1->pair = p2;
+                p2->pair = p1;
+
+                noteMap.push_back(p1);
+                noteMap.push_back(p2);
             }
         }
     }
@@ -797,10 +852,10 @@ void editTable::exportMidiWithTrackMapper(const std::string& filename) {
                     p->isNoteOn = false;
                     p->isMarker = true;
                     p->markerMessage = it_content.second;
+                    p->ins = ins;
+                    p->track = track;
 
-                    auto& lst = noteMap[track];
-                    lst.first = ins;
-                    lst.second.push_back(p);
+                    noteMap.push_back(p);
                 }
             }
         }
@@ -809,37 +864,79 @@ void editTable::exportMidiWithTrackMapper(const std::string& filename) {
     for (auto it : timeMap) {  //添加time map
         midifile.addTempo(0, it.first, it.second);
     }
-    for (auto itlst : noteMap) {
-        int tk = itlst.first;
-        int ch = tk;
-        if (ch > 15)
-            ch = 15;
+    sort(noteMap.begin(), noteMap.end(),
+         [](noteMap_t* a, noteMap_t* b) {
+             if (a->time < b->time) {
+                 return true;
+             }
+             if (a->time == b->time && b->isNoteOn && !a->isNoteOn) {
+                 return true;
+             }
+             return false;
+         });
 
-        sort(itlst.second.second.begin(), itlst.second.second.end(),
-             [](noteMap_t* a, noteMap_t* b) {
-                 if (a->time < b->time) {
-                     return true;
-                 }
-                 if (a->time == b->time && b->isNoteOn && !a->isNoteOn) {
-                     return true;
-                 }
-                 return false;
-             });
+    std::map<int, int> ins2Channel;
+    std::tuple<std::set<int>, int> channelUsing[16]{};
+    for (int i = 0; i < 16; ++i) {
+        std::get<1>(channelUsing[i]) = -1;
+    }
 
-        midifile.addTimbre(tk, 0, ch, itlst.second.first);
-
-        for (auto it : itlst.second.second) {  //扫描音轨
-            if (it->isMarker) {
-                midifile.addMarker(tk, it->time, it->markerMessage);
-            } else {
-                if (it->isNoteOn) {
-                    midifile.addNoteOn(tk, it->time, ch, it->tone, it->volume);
+    for (auto it : noteMap) {
+        if (it->isMarker) {
+            midifile.addMarker(it->track, it->time, it->markerMessage);
+        } else {
+            if (it->isNoteOn) {
+                //规划通道
+                auto it_ins = ins2Channel.find(it->ins);
+                if (it_ins == ins2Channel.end()) {
+                    //找未使用的通道
+                    for (int i = 0; i < 16; ++i) {
+                        if (std::get<1>(channelUsing[i]) < 0 &&
+                            std::get<0>(channelUsing[i]).empty()) {
+                            ins2Channel[it->ins] = i;
+                            std::get<1>(channelUsing[i]) = it->ins;
+                            std::get<0>(channelUsing[i]).insert(it->tone);
+                            it->channel = i;
+                            it->pair->channel = i;
+                            midifile.addTimbre(it->track, it->time, i, it->ins);
+                            goto addNoteOn;
+                        }
+                    }
+                    //找一个空通道
+                    for (int i = 0; i < 16; ++i) {
+                        if (std::get<0>(channelUsing[i]).empty()) {
+                            if (std::get<1>(channelUsing[i]) >= 0) {
+                                //关闭之前的音符
+                                ins2Channel.erase(std::get<1>(channelUsing[i]));
+                            }
+                            ins2Channel[it->ins] = i;
+                            std::get<1>(channelUsing[i]) = it->ins;
+                            std::get<0>(channelUsing[i]).insert(it->tone);
+                            it->channel = i;
+                            it->pair->channel = i;
+                            midifile.addTimbre(it->track, it->time, i, it->ins);
+                            goto addNoteOn;
+                        }
+                    }
+                    //没有通道可用
+                    goto playNoteFail;
                 } else {
-                    midifile.addNoteOff(tk, it->time, ch, it->tone);
+                    std::get<0>(channelUsing[it_ins->second]).insert(it->tone);
+                    it->channel = it_ins->second;
+                    it->pair->channel = it_ins->second;
+                }
+            addNoteOn:
+                midifile.addNoteOn(it->track, it->time, it->channel, it->tone, it->volume);
+            } else {
+                if (it->channel >= 0 && it->channel < 16 &&
+                    std::get<1>(channelUsing[it->channel]) == it->ins) {
+                    std::get<0>(channelUsing[it->channel]).erase(it->tone);
+                    midifile.addNoteOff(it->track, it->time, it->channel, it->tone);
                 }
             }
-            delete it;
         }
+    playNoteFail:
+        delete it;
     }
     midifile.write(filename);
     editStatus = false;

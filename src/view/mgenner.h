@@ -117,6 +117,8 @@ class mgenner : public mgnr::synth {
     bool show_trackMap_window = false;
     std::list<std::tuple<std::string, int, int>> trackMapBuffer;
     bool trackMapBuffer_closeWithSave = false;
+    int trackMapBuffer_setInstrument_track;
+    int trackMapBuffer_setInstrument_ins;
     void trackMapBuffer_init();
     void trackMapBuffer_save();
 

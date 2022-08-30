@@ -21,13 +21,43 @@ void mgenner::ui_shutdown() {
 }
 
 void mgenner::ui_loop() {
-    {
-        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(300, 100), ImGuiCond_FirstUseEver);
-        ImGui::Begin("播放控制", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("播放控制", nullptr,
+                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar)) {
         CHECK_FOCUS;
 
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("文件")) {
+                if (ImGui::MenuItem("载入", "ctrl+o")) {
+                    loadMidiDialog();
+                }
+                if (ImGui::MenuItem("保存", "ctrl+s")) {
+                    saveMidiFile();
+                }
+                if (ImGui::MenuItem("另存为", "ctrl+shift+s")) {
+                    saveMidiDialog();
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("设置")) {
+                if (ImGui::MenuItem("音轨映射表")) {
+                    show_trackMap_window = true;
+                    trackMapBuffer_closeWithSave = false;
+                    checkTrackMapper();
+                    trackMapBuffer_init();
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip(
+                        "保存时若音轨映射关系错误，\n"
+                        "会自动呼出此菜单");
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("扩展")) {
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
         if (ImGui::Button("开头")) {
             lookAtX = 0;
         }
@@ -47,27 +77,6 @@ void mgenner::ui_loop() {
         ImGui::SameLine();
         if (ImGui::Button("结尾")) {
             lookAtX = noteTimeMax;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("载入")) {
-            loadMidiDialog();
-        }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("ctrl+o");
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("保存")) {
-            saveMidiFile();
-        }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("ctrl+s");
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("另存为")) {
-            saveMidiDialog();
-        }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("ctrl+shift+s");
         }
 
         if (fileDialog_loadMidi.HasSelected()) {
@@ -97,11 +106,6 @@ void mgenner::ui_loop() {
         }
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("隐藏其他音轨，仅显示此音轨");
-        }
-        if (ImGui::Button("音轨映射表")) {
-            show_trackMap_window = true;
-            checkTrackMapper();
-            trackMapBuffer_init();
         }
 
         ImGui::End();
@@ -451,6 +455,17 @@ void mgenner::ui_loop() {
     if (show_trackMap_window) {
         ImGui::Begin("音轨映射表", &show_trackMap_window);
         CHECK_FOCUS;
+        bool selectIns = false;
+        bool setTrack = false;
+        int setTrack_id;
+        int setTrack_ins;
+        if (trackMapBuffer_closeWithSave) {
+            ImGui::TextWrapped(
+                "如保存midi时弹出此窗口，"
+                "表明有部分音轨未分配midi轨道，"
+                "系统将自动分配，请确认后再保存");
+        }
+        ImGui::TextWrapped("此表设置的是输出的midi文件中的轨道关系，和播放时的乐器无关");
         if (ImGui::BeginTable("音轨映射表", 3)) {
             ImGui::TableNextColumn();
             ImGui::Text("音轨名称");
@@ -458,9 +473,6 @@ void mgenner::ui_loop() {
             ImGui::Text("音轨");
             ImGui::TableNextColumn();
             ImGui::Text("乐器");
-            bool setTrack = false;
-            int setTrack_id;
-            int setTrack_ins;
             char buf[256];
             int index = 1;
             for (auto& it : trackMapBuffer) {
@@ -485,30 +497,49 @@ void mgenner::ui_loop() {
                 }
                 ImGui::TableNextColumn();
                 n = std::get<2>(it);
-                snprintf(buf, sizeof(buf), "乐器%d", index);
-                if (ImGui::InputInt(buf, &std::get<2>(it))) {
-                    if (std::get<2>(it) < 0) {
-                        std::get<2>(it) = 0;
-                    }
-                    if (std::get<2>(it) > 127) {
-                        std::get<2>(it) = 127;
-                    }
-                    if (n != std::get<2>(it)) {
-                        setTrack = true;
-                        setTrack_id = std::get<1>(it);
-                        setTrack_ins = std::get<2>(it);
-                    }
+                snprintf(buf, sizeof(buf), "设置乐器%d", index);
+
+                if (ImGui::Button(buf)) {
+                    selectIns = true;
+                    trackMapBuffer_setInstrument_track = std::get<1>(it);
+                    trackMapBuffer_setInstrument_ins = std::get<2>(it);
                 }
+
+                ImGui::SameLine();
+                if (std::get<2>(it) < 0) {
+                    std::get<2>(it) = 0;
+                }
+                if (std::get<2>(it) > 127) {
+                    std::get<2>(it) = 127;
+                }
+                ImGui::TextUnformatted(mgnr::instrumentName[std::get<2>(it)]);
                 ++index;
             }
-            if (setTrack) {
-                for (auto& it : trackMapBuffer) {
-                    if (std::get<1>(it) == setTrack_id) {
-                        std::get<2>(it) = setTrack_ins;
-                    }
+            ImGui::EndTable();
+        }
+        if (selectIns) {
+            ImGui::OpenPopup("selectInstrument");
+        }
+        if (ImGui::BeginPopup("selectInstrument")) {
+            CHECK_FOCUS;
+            ImGui::Text("选择乐器");
+            ImGui::Separator();
+            for (int i = 0; i < 128; ++i) {
+                if (ImGui::Selectable(mgnr::instrumentName[i],
+                                      trackMapBuffer_setInstrument_ins == i)) {
+                    setTrack = true;
+                    setTrack_id = trackMapBuffer_setInstrument_track;
+                    setTrack_ins = i;
                 }
             }
-            ImGui::EndTable();
+            ImGui::EndPopup();
+        }
+        if (setTrack) {
+            for (auto& it : trackMapBuffer) {
+                if (std::get<1>(it) == setTrack_id) {
+                    std::get<2>(it) = setTrack_ins;
+                }
+            }
         }
 
         if (ImGui::Button("保存")) {
