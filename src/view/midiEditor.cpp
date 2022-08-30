@@ -28,6 +28,7 @@ mgenner::mgenner()
     scroll_texture_buffer = SDL_CreateTexture(renderer,
                                               SDL_PIXELFORMAT_ABGR8888,
                                               SDL_TEXTUREACCESS_TARGET, 1024, 30);
+    updateWindowTitle();
     printf("mgenner:start\n");
 }
 mgenner::~mgenner() {
@@ -519,4 +520,20 @@ void mgenner::setInfo(const std::string& str) {
             it->info = this->strPool.create(str);
         }
     }
+}
+
+void mgenner::editStatusUpdate() {
+    updateWindowTitle();
+}
+
+void mgenner::updateWindowTitle() {
+    std::string title = "";
+    if (editStatus) {
+        title += "(*)";
+    }
+    if (!midiFilePath.empty()) {
+        title += midiFilePath;
+    }
+    title += " mGenNer";
+    SDL_SetWindowTitle(window, title.c_str());
 }

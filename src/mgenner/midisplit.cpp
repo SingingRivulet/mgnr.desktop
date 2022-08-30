@@ -252,6 +252,7 @@ class diff_loader : public synth {
     void drawDescriptions(float p, const stringPool::stringPtr& title, const std::string& content) override {}
     void drawDescriptionsPadd() override {}
     void drawCaption(float p, const std::string& str) override {}
+    void editStatusUpdate() override {}
 };
 void synth::diff_path(
     const std::string& path,

@@ -453,6 +453,7 @@ void mgenner::ui_loop() {
         ImGui::End();
     }
     if (show_trackMap_window) {
+        ImGui::SetNextWindowSize(ImVec2(615, 478), ImGuiCond_FirstUseEver);
         ImGui::Begin("音轨映射表", &show_trackMap_window);
         CHECK_FOCUS;
         bool selectIns = false;
@@ -466,6 +467,7 @@ void mgenner::ui_loop() {
                 "系统将自动分配，请确认后再保存");
         }
         ImGui::TextWrapped("此表设置的是输出的midi文件中的轨道关系，和播放时的乐器无关");
+        ImGui::TextUnformatted("");
         if (ImGui::BeginTable("音轨映射表", 3)) {
             ImGui::TableNextColumn();
             ImGui::Text("音轨名称");
@@ -609,10 +611,12 @@ void mgenner::saveMidiDialog() {
 
 void mgenner::loadMidiFile(const std::string& path) {
     midiFilePath = path;
+    updateWindowTitle();
     loadMidi(path);
 }
 void mgenner::saveMidiFile(const std::string& path) {
     midiFilePath = path;
+    updateWindowTitle();
     if (!checkTrackMapper()) {
         show_trackMap_window = true;
         trackMapBuffer_closeWithSave = true;

@@ -4,6 +4,7 @@
 #include <list>
 #include <memory>
 #include <sstream>
+#include <unordered_set>
 #include "midiMap.h"
 namespace mgnr {
 extern const char* instrumentName[128];
@@ -46,6 +47,8 @@ class editTable : public midiMap {
     virtual void drawNote_begin() = 0;
     virtual void drawNote(int fx, int fy, int tx, int ty, int volume, const stringPool::stringPtr& info, bool selected, bool onlydisplay = false) = 0;
     virtual void drawNote_end() = 0;
+
+    virtual void editStatusUpdate() = 0;
 
     std::map<std::string, int> trackNameMapper;
     std::map<int, int> trackInsMapper;
@@ -212,6 +215,7 @@ class editTable : public midiMap {
         histories_undo.push_back(ptr);
         histories_redo.clear();
         editStatus = true;
+        editStatusUpdate();
     }
 
    private:

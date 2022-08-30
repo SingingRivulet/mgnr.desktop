@@ -235,20 +235,25 @@ void editTable::resetTrackMapper() {
 bool editTable::checkTrackMapper() {
     bool res = true;
     int maxTrack = -1;
-    std::vector<std::string> mapperArr;
+    std::unordered_set<std::string> tracks;
     for (auto it : notes) {
-        if (trackNameMapper.find(it->info.value()) == trackNameMapper.end()) {
-            auto t = getInstrumentTrack(it->info.c_str());
+        tracks.insert(it->info.value());
+    }
+    std::vector<std::string> mapperArr;
+    for (auto& it : tracks) {
+        if (trackNameMapper.find(it) == trackNameMapper.end()) {
+            auto t = getInstrumentTrack(it.c_str());
+            //printf("%s %d %d\n", it->info.c_str(), std::get<0>(t), std::get<1>(t));
             if (std::get<HAVE_TRACK>(t)) {
                 //有音轨
-                trackNameMapper[it->info.value()] = std::get<TRACK_ID>(t);
+                trackNameMapper[it] = std::get<TRACK_ID>(t);
                 if (std::get<TRACK_ID>(t) > maxTrack) {
                     maxTrack = std::get<TRACK_ID>(t);
                 }
             } else {
                 //自动分配音轨
                 res = false;
-                mapperArr.push_back(it->info.value());
+                mapperArr.push_back(it);
             }
         }
     }
@@ -768,6 +773,7 @@ void editTable::exportMidi(const std::string& filename) {
     }
     midifile.write(filename);
     editStatus = false;
+    editStatusUpdate();
 }
 
 void editTable::exportMidiWithTrackMapper(const std::string& filename) {
@@ -940,6 +946,7 @@ void editTable::exportMidiWithTrackMapper(const std::string& filename) {
     }
     midifile.write(filename);
     editStatus = false;
+    editStatusUpdate();
 }
 
 }  // namespace mgnr

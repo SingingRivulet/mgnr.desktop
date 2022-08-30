@@ -805,6 +805,7 @@ void editTable::selectedToRelative(std::string& out) {
 void editTable::undo() {
     printf("mgenner:undo\n");
     editStatus = true;
+    editStatusUpdate();
     auto it = histories_undo.rbegin();
     if (it != histories_undo.rend()) {
         std::shared_ptr<history> step = *it;
@@ -850,6 +851,7 @@ void editTable::undo() {
 void editTable::redo() {
     printf("mgenner:redo\n");
     editStatus = true;
+    editStatusUpdate();
     auto it = histories_redo.rbegin();
     if (it != histories_redo.rend()) {
         std::shared_ptr<history> step = *it;

@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_sdlrenderer.h>
+#include <filesystem>
 #include <iostream>
 #include "imfilebrowser.h"
 #include "sampler.h"
@@ -64,6 +65,10 @@ class mgenner : public mgnr::synth {
 
     void onLoadName(const mgnr::stringPool::stringPtr& name) override;
     void setInfo(const std::string& str);
+
+    void editStatusUpdate()override;
+
+    void updateWindowTitle();
 
     //////////////////////////////////////////////////////////////////
     //绘制
