@@ -66,7 +66,7 @@ class mgenner : public mgnr::synth {
     void onLoadName(const mgnr::stringPool::stringPtr& name) override;
     void setInfo(const std::string& str);
 
-    void editStatusUpdate()override;
+    void editStatusUpdate() override;
 
     void updateWindowTitle();
 
@@ -124,7 +124,8 @@ class mgenner : public mgnr::synth {
     bool trackMapBuffer_closeWithSave = false;
     int trackMapBuffer_setInstrument_track;
     int trackMapBuffer_setInstrument_ins;
-    void trackMapBuffer_init();
+    void trackMapBuffer_init(std::map<std::string, int>& trackNameMapper,
+                             std::map<int, int>& trackInsMapper);
     void trackMapBuffer_save();
 
     ImGui::FileBrowser fileDialog_loadMidi;

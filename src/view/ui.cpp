@@ -43,8 +43,10 @@ void mgenner::ui_loop() {
                 if (ImGui::MenuItem("音轨映射表")) {
                     show_trackMap_window = true;
                     trackMapBuffer_closeWithSave = false;
-                    checkTrackMapper();
-                    trackMapBuffer_init();
+                    std::map<std::string, int> tn = trackNameMapper;
+                    std::map<int, int> ti = trackInsMapper;
+                    checkTrackMapper(tn, ti);
+                    trackMapBuffer_init(tn, ti);
                 }
                 if (ImGui::IsItemHovered()) {
                     ImGui::SetTooltip(
@@ -549,9 +551,11 @@ void mgenner::ui_loop() {
             trackMapBuffer_save();
         }
         ImGui::SameLine();
-        if (ImGui::Button("重置")) {
-            resetTrackMapper();
-            trackMapBuffer_init();
+        if (ImGui::Button("复位")) {
+            std::map<std::string, int> tn;
+            std::map<int, int> ti;
+            checkTrackMapper(tn, ti);
+            trackMapBuffer_init(tn, ti);
         }
 
         ImGui::End();
@@ -571,7 +575,8 @@ void mgenner::ui_loop() {
         displayBuffer.clear();
     }
 }
-void mgenner::trackMapBuffer_init() {
+void mgenner::trackMapBuffer_init(std::map<std::string, int>& trackNameMapper,
+                                  std::map<int, int>& trackInsMapper) {
     trackMapBuffer.clear();
     for (auto& it : trackNameMapper) {
         std::tuple<std::string, int, int> t;
@@ -617,11 +622,13 @@ void mgenner::loadMidiFile(const std::string& path) {
 void mgenner::saveMidiFile(const std::string& path) {
     midiFilePath = path;
     updateWindowTitle();
-    if (!checkTrackMapper()) {
+    std::map<std::string, int> tn = trackNameMapper;
+    std::map<int, int> ti = trackInsMapper;
+    if (!checkTrackMapper(tn, ti)) {
         show_trackMap_window = true;
         trackMapBuffer_closeWithSave = true;
-        checkTrackMapper();
-        trackMapBuffer_init();
+        //checkTrackMapper();
+        trackMapBuffer_init(tn, ti);
     } else {
         exportMidiWithTrackMapper(path);
     }

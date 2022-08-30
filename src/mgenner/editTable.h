@@ -53,7 +53,8 @@ class editTable : public midiMap {
     std::map<std::string, int> trackNameMapper;
     std::map<int, int> trackInsMapper;
     void resetTrackMapper();
-    bool checkTrackMapper();
+    bool checkTrackMapper(std::map<std::string, int>& trackNameMapper,
+                          std::map<int, int>& trackInsMapper);
 
     HBB::vec screenToAbs(int x, int y);  //屏幕坐标转midi绝对坐标
 

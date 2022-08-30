@@ -227,12 +227,13 @@ std::tuple<int, int, bool> editTable::getInstrumentTrack(const char* name) {
 void editTable::resetTrackMapper() {
     trackNameMapper.clear();
     trackInsMapper.clear();
-    checkTrackMapper();
+    checkTrackMapper(trackNameMapper, trackInsMapper);
 }
 #define HAVE_TRACK 2
 #define INSTRUMENT_ID 1
 #define TRACK_ID 0
-bool editTable::checkTrackMapper() {
+bool editTable::checkTrackMapper(std::map<std::string, int>& trackNameMapper,
+                                 std::map<int, int>& trackInsMapper) {
     bool res = true;
     int maxTrack = -1;
     std::unordered_set<std::string> tracks;
