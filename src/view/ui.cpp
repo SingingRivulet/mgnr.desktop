@@ -6,7 +6,7 @@ void mgenner::ui_init() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
 
-    io.Fonts->AddFontFromFileTTF("../datas/font/font.ttf",
+    io.Fonts->AddFontFromFileTTF(path_font.c_str(),
                                  20.f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
     ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
     ImGui_ImplSDLRenderer_Init(renderer);
@@ -24,7 +24,7 @@ void mgenner::ui_loop() {
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("播放控制", nullptr,
                      ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar)) {
-        CHECK_FOCUS;
+        checkfocus();
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("文件")) {
@@ -56,6 +56,7 @@ void mgenner::ui_loop() {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("扩展")) {
+                plugin_menu();
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
@@ -115,7 +116,7 @@ void mgenner::ui_loop() {
     if (show_edit_window) {
         ImGui::SetNextWindowPos(ImVec2(windowWidth - 420, 0), ImGuiCond_FirstUseEver);
         ImGui::Begin("编辑", &show_edit_window, ImGuiWindowFlags_AlwaysAutoResize);
-        CHECK_FOCUS;
+        checkfocus();
 
         {
             if (ImGui::Button("撤销")) {
@@ -253,7 +254,7 @@ void mgenner::ui_loop() {
         ImGui::SetNextWindowPos(ImVec2(windowWidth - 300, 260), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(300, windowHeight - 260), ImGuiCond_FirstUseEver);
         ImGui::Begin("选择音轨", &show_trackSelect_window);
-        CHECK_FOCUS;
+        checkfocus();
 
         constexpr char editTractContent[] =
             "编辑状态下更换音轨会同时将所有已选\n"
@@ -294,7 +295,7 @@ void mgenner::ui_loop() {
                          ImGuiWindowFlags_AlwaysAutoResize |
                          ImGuiWindowFlags_NoMove |
                          ImGuiWindowFlags_NoBringToFrontOnFocus);
-        CHECK_FOCUS;
+        checkfocus();
         if (!(ImGui::IsItemFocused() || ImGui::IsWindowFocused())) {
             show_tempoSet_bar = false;
         }
@@ -314,7 +315,7 @@ void mgenner::ui_loop() {
     }
     if (show_tempoAdd_bar) {
         ImGui::Begin("设置速度", &show_tempoAdd_bar, ImGuiWindowFlags_AlwaysAutoResize);
-        CHECK_FOCUS;
+        checkfocus();
         ImGui::InputInt("bpm", &show_tempoAdd_bar_val);
         if (show_tempoAdd_bar_val < 1) {
             show_tempoAdd_bar_val = 1;
@@ -346,7 +347,7 @@ void mgenner::ui_loop() {
                          ImGuiWindowFlags_AlwaysAutoResize |
                          ImGuiWindowFlags_NoMove |
                          ImGuiWindowFlags_NoBringToFrontOnFocus);
-        CHECK_FOCUS;
+        checkfocus();
         if (!(ImGui::IsItemFocused() || ImGui::IsWindowFocused())) {
             show_midiDescription_bar = false;
         }
@@ -396,7 +397,7 @@ void mgenner::ui_loop() {
         ImGui::Begin("编辑文本",
                      &show_descriptionEdit_bar,
                      ImGuiWindowFlags_AlwaysAutoResize);
-        CHECK_FOCUS;
+        checkfocus();
         ImGui::Text("音轨：%s", midiDescriptionBuffer_title.c_str());
         ImGui::InputText("设置文本",
                          midiDescriptionBuffer_content,
@@ -413,7 +414,7 @@ void mgenner::ui_loop() {
         ImGui::Begin("添加文本",
                      &show_descriptionAdd_bar,
                      ImGuiWindowFlags_AlwaysAutoResize);
-        CHECK_FOCUS;
+        checkfocus();
         ImGui::Text("音轨：%s", midiDescriptionBuffer_title.c_str());
         ImGui::InputText("设置文本",
                          midiDescriptionBuffer_content,
@@ -433,7 +434,7 @@ void mgenner::ui_loop() {
                      nullptr,
                      ImGuiWindowFlags_AlwaysAutoResize |
                          ImGuiWindowFlags_NoFocusOnAppearing);
-        CHECK_FOCUS;
+        checkfocus();
 
         ImGui::Text("改变时长");
         ImGui::SameLine();
@@ -457,7 +458,7 @@ void mgenner::ui_loop() {
     if (show_trackMap_window) {
         ImGui::SetNextWindowSize(ImVec2(615, 478), ImGuiCond_FirstUseEver);
         ImGui::Begin("音轨映射表", &show_trackMap_window);
-        CHECK_FOCUS;
+        checkfocus();
         bool selectIns = false;
         bool setTrack = false;
         int setTrack_id;
@@ -525,7 +526,7 @@ void mgenner::ui_loop() {
             ImGui::OpenPopup("selectInstrument");
         }
         if (ImGui::BeginPopup("selectInstrument")) {
-            CHECK_FOCUS;
+            checkfocus();
             ImGui::Text("选择乐器");
             ImGui::Separator();
             for (int i = 0; i < 128; ++i) {
@@ -560,6 +561,8 @@ void mgenner::ui_loop() {
 
         ImGui::End();
     }
+
+    plugin_show();
 
     fileDialog_saveMidi.Display();
     fileDialog_loadMidi.Display();

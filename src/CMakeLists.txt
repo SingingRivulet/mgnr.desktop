@@ -1,14 +1,18 @@
+cmake_minimum_required(VERSION 3.16)
 project("mgnr")
 
 #set(CMAKE_CXX_FLAGS "-std=c++20 -ggdb")
-set(CMAKE_CXX_FLAGS "-std=c++2a -ggdb")
+set(CMAKE_CXX_FLAGS "-std=c++20 -ggdb")
 
 find_package(SDL2 2.0.17 REQUIRED)
 find_path(sdl2_INCLUDE_DIR SDL.h)
 find_library(sdl2_LIBRARY SDL2)
 find_library(sdl2main_LIBRARY SDL2main)
+find_library(fluidsynth_LIBRARY fluidsynth)
 find_path(sdl2_ttf_INCLUDE_DIR SDL_ttf.h)
 find_library(sdl2_ttf_LIBRARY SDL2_ttf)
+
+add_subdirectory(modules)
 
 include_directories(
     ./
@@ -16,6 +20,8 @@ include_directories(
     ./utils
     ./imgui
     ./imgui/backends
+    ./Dear-ImGui-Lua-Binding/include
+    ./Dear-ImGui-Lua-Binding/src
     /usr/local/include/SDL2 #imgui的头文件路径有问题，必须加这一行。可根据实际情况修改
 )
 
@@ -25,6 +31,7 @@ add_executable(mgnr
     ./view/ui.cpp
     ./view/events.cpp
     ./view/synth.cpp
+    ./view/plugin.cpp
 
     ./mgenner/Options.cpp
     ./mgenner/midiMap.cpp
@@ -84,13 +91,23 @@ add_executable(mgnr
     ./imgui/imgui_demo.cpp
     ./imgui/backends/imgui_impl_sdl.cpp
     ./imgui/backends/imgui_impl_sdlrenderer.cpp
+
+    ./Dear-ImGui-Lua-Binding/src/lua_imgui_enum.cpp
+    ./Dear-ImGui-Lua-Binding/src/lua_imgui_hash.cpp
+    ./Dear-ImGui-Lua-Binding/src/lua_imgui_map.cpp
+    ./Dear-ImGui-Lua-Binding/src/lua_imgui_ImGui.cpp
+    ./Dear-ImGui-Lua-Binding/src/lua_imgui_ImGuiTextBuffer.cpp
+    ./Dear-ImGui-Lua-Binding/src/lua_imgui_type.cpp
+    ./Dear-ImGui-Lua-Binding/src/lua_imgui.cpp
 )
 
 target_link_libraries(mgnr
     ${SDL2_LIBRARIES}
     ${sdl2_ttf_LIBRARY}
-    fluidsynth
+    ${fluidsynth_LIBRARY}
 )
 
 set_target_properties(mgnr PROPERTIES OUT_NAME "mgnr")
 
+file(COPY config.lua DESTINATION ./)
+file(COPY res DESTINATION ./)

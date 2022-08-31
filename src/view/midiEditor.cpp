@@ -2,6 +2,7 @@
 mgenner::mgenner()
     : fileDialog_saveMidi(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir) {
     printf("mgenner:init...\n");
+    loadConfig();
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
     window = SDL_CreateWindow("mgnr",
                               SDL_WINDOWPOS_UNDEFINED,
@@ -13,7 +14,7 @@ mgenner::mgenner()
     windowHeight = 600;
     snprintf(defaultInfoBuffer, sizeof(defaultInfoBuffer), "%s", defaultInfo.c_str());
     TTF_Init();
-    font = TTF_OpenFont("../datas/font/font.ttf", 20);
+    font = TTF_OpenFont(path_font.c_str(), 20);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
 
     ui_init();
@@ -39,6 +40,7 @@ mgenner::~mgenner() {
     if (scroll_texture_buffer) {
         SDL_DestroyTexture(scroll_texture_buffer);
     }
+    shutdownPlugins();
     ui_shutdown();
     synth_shutdown();
     if (renderer) {

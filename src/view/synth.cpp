@@ -19,7 +19,7 @@ void mgenner::synth_init() {
      * get used from the SoundFont)
      * Depending on the size of the SoundFont, this will take some time to complete...
      */
-    sfont_id = fluid_synth_sfload(synth, "../datas/soundfont/sndfnt.sf2", 1);
+    sfont_id = fluid_synth_sfload(synth, path_sf2.c_str(), 1);
     if (sfont_id == FLUID_FAILED) {
         puts("Loading the SoundFont failed!");
         exit(1);

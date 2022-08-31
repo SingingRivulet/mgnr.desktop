@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <dlfcn.h>
 #include <fluidsynth.h>
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
@@ -8,6 +9,7 @@
 #include <filesystem>
 #include <iostream>
 #include "imfilebrowser.h"
+#include "lua.hpp"
 #include "sampler.h"
 #include "synth.h"
 
@@ -144,6 +146,11 @@ class mgenner : public mgnr::synth {
     void saveMidiFile(const std::string& path);
     void saveMidiFile();
 
+    inline void checkfocus() {
+        if (ImGui::IsItemFocused() || ImGui::IsWindowFocused() || ImGui::IsWindowHovered()) {
+            focusCanvas = false;
+        }
+    }
     /////////////////////////////////////////////////////////////////////////////
     //合成器
     fluid_settings_t* settings = nullptr;
@@ -158,4 +165,21 @@ class mgenner : public mgnr::synth {
     void callSynthNoteOff(const char* info, int channel, int tone) override;
     void onSelectedChange(int len) override;
     void onScriptCmd(const char* cmd) override;
+    /////////////////////////////////////////////////////////////////////////////
+    //插件
+    std::string path_font = "./res/font/font.ttf";
+    std::string path_sf2 = "./res/soundfont/sndfnt.sf2";
+    struct pluginConfig {
+        std::string name;
+        int init = -1;
+        int shutdown = -1;
+        int draw = -1;
+    };
+    std::vector<pluginConfig*> plugins;
+    std::set<pluginConfig*> plugins_showing;
+    lua_State* lua_mainthread;
+    void loadConfig();
+    void plugin_menu();
+    void plugin_show();
+    void shutdownPlugins();
 };
