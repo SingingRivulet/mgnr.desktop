@@ -18,10 +18,11 @@ include_directories(
     ./
     ./mgenner
     ./utils
-    ./imgui
-    ./imgui/backends
-    ./Dear-ImGui-Lua-Binding/include
-    ./Dear-ImGui-Lua-Binding/src
+    ./dep/
+    ./dep/imgui
+    ./dep/imgui/backends
+    ./dep/Dear-ImGui-Lua-Binding/include
+    ./dep/Dear-ImGui-Lua-Binding/src
     /usr/local/include/SDL2 #imgui的头文件路径有问题，必须加这一行。可根据实际情况修改
 )
 
@@ -51,54 +52,54 @@ add_executable(mgnr
     ./mgenner/synth.cpp
     ./mgenner/editTable.cpp
 
-    ./lua/lapi.c
-    ./lua/lauxlib.c
-    ./lua/lbaselib.c
-    ./lua/lcode.c
-    ./lua/lcorolib.c
-    ./lua/lctype.c
-    ./lua/ldblib.c
-    ./lua/ldebug.c
-    ./lua/ldo.c
-    ./lua/ldump.c
-    ./lua/lfunc.c
-    ./lua/lgc.c
-    ./lua/linit.c
-    ./lua/liolib.c
-    ./lua/llex.c
-    ./lua/lmathlib.c
-    ./lua/lmem.c
-    ./lua/loadlib.c
-    ./lua/lobject.c
-    ./lua/lopcodes.c
-    ./lua/loslib.c
-    ./lua/lparser.c
-    ./lua/lstate.c
-    ./lua/lstring.c
-    ./lua/lstrlib.c
-    ./lua/ltable.c
-    ./lua/ltablib.c
-    ./lua/ltm.c
-    ./lua/lundump.c
-    ./lua/lutf8lib.c
-    ./lua/lvm.c
-    ./lua/lzio.c
+    ./dep/lua/lapi.c
+    ./dep/lua/lauxlib.c
+    ./dep/lua/lbaselib.c
+    ./dep/lua/lcode.c
+    ./dep/lua/lcorolib.c
+    ./dep/lua/lctype.c
+    ./dep/lua/ldblib.c
+    ./dep/lua/ldebug.c
+    ./dep/lua/ldo.c
+    ./dep/lua/ldump.c
+    ./dep/lua/lfunc.c
+    ./dep/lua/lgc.c
+    ./dep/lua/linit.c
+    ./dep/lua/liolib.c
+    ./dep/lua/llex.c
+    ./dep/lua/lmathlib.c
+    ./dep/lua/lmem.c
+    ./dep/lua/loadlib.c
+    ./dep/lua/lobject.c
+    ./dep/lua/lopcodes.c
+    ./dep/lua/loslib.c
+    ./dep/lua/lparser.c
+    ./dep/lua/lstate.c
+    ./dep/lua/lstring.c
+    ./dep/lua/lstrlib.c
+    ./dep/lua/ltable.c
+    ./dep/lua/ltablib.c
+    ./dep/lua/ltm.c
+    ./dep/lua/lundump.c
+    ./dep/lua/lutf8lib.c
+    ./dep/lua/lvm.c
+    ./dep/lua/lzio.c
 
-    ./imgui/imgui.cpp
-    ./imgui/imgui_draw.cpp
-    ./imgui/imgui_tables.cpp
-    ./imgui/imgui_widgets.cpp
-    ./imgui/imgui_demo.cpp
-    ./imgui/backends/imgui_impl_sdl.cpp
-    ./imgui/backends/imgui_impl_sdlrenderer.cpp
+    ./dep/imgui/imgui.cpp
+    ./dep/imgui/imgui_draw.cpp
+    ./dep/imgui/imgui_tables.cpp
+    ./dep/imgui/imgui_widgets.cpp
+    ./dep/imgui/imgui_demo.cpp
+    ./dep/imgui/backends/imgui_impl_sdl.cpp
+    ./dep/imgui/backends/imgui_impl_sdlrenderer.cpp
 
-    ./Dear-ImGui-Lua-Binding/src/lua_imgui_enum.cpp
-    ./Dear-ImGui-Lua-Binding/src/lua_imgui_hash.cpp
-    ./Dear-ImGui-Lua-Binding/src/lua_imgui_map.cpp
-    ./Dear-ImGui-Lua-Binding/src/lua_imgui_ImGui.cpp
-    ./Dear-ImGui-Lua-Binding/src/lua_imgui_ImGuiTextBuffer.cpp
-    ./Dear-ImGui-Lua-Binding/src/lua_imgui_type.cpp
-    ./Dear-ImGui-Lua-Binding/src/lua_imgui.cpp
+    ./dep/Dear-ImGui-Lua-Binding/src/lua_imgui_enum.cpp
+    ./dep/Dear-ImGui-Lua-Binding/src/lua_imgui_hash.cpp
+    ./dep/Dear-ImGui-Lua-Binding/src/lua_imgui_map.cpp
+    ./dep/Dear-ImGui-Lua-Binding/src/lua_imgui_ImGui.cpp
+    ./dep/Dear-ImGui-Lua-Binding/src/lua_imgui_ImGuiTextBuffer.cpp
+    ./dep/Dear-ImGui-Lua-Binding/src/lua_imgui_type.cpp
+    ./dep/Dear-ImGui-Lua-Binding/src/lua_imgui.cpp
 )
 
 target_link_libraries(mgnr

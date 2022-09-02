@@ -1,0 +1,7 @@
+[submodule "src/dep/imgui"]
+	path = src/dep/imgui
+	url = git@github.com:/ocornut/imgui.git
+
+[submodule "src/dep/Dear-ImGui-Lua-Binding"]
+	path = src/dep/Dear-ImGui-Lua-Binding
+	url = git@github.com:/Keiwaamung/Dear-ImGui-Lua-Binding

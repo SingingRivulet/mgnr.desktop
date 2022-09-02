@@ -79,11 +79,12 @@ void mgenner::loadConfig() {
 
         lua_getglobal(lua_mainthread, "pluginsInit");
         if (lua_isfunction(lua_mainthread, -1)) {
-            lua_pushlightuserdata(lua_mainthread, this);
-            if (lua_pcall(lua_mainthread, 1, 0, 0)) {
-                auto err = lua_tostring(lua_mainthread, -1);
-                printf("mgennerPlugin:error:%s\n", err);
-            }
+            //lua_pushlightuserdata(lua_mainthread, this);
+            //if (lua_pcall(lua_mainthread, 1, 0, 0)) {
+            //    auto err = lua_tostring(lua_mainthread, -1);
+            //    printf("mgennerPlugin:error:%s\n", err);
+            //}
+            lua_callfunction(lua_mainthread, this);
         }
         lua_settop(lua_mainthread, 0);
     }
@@ -92,11 +93,12 @@ void mgenner::loadConfig() {
         if (it->init >= 0) {
             lua_rawgeti(lua_mainthread, LUA_REGISTRYINDEX, it->init);
             if (lua_isfunction(lua_mainthread, -1)) {
-                lua_pushlightuserdata(lua_mainthread, this);
-                if (lua_pcall(lua_mainthread, 1, 0, 0)) {
-                    auto err = lua_tostring(lua_mainthread, -1);
-                    printf("mgennerPlugin:init %s:error:%s\n", it->name.c_str(), err);
-                }
+                //lua_pushlightuserdata(lua_mainthread, this);
+                //if (lua_pcall(lua_mainthread, 1, 0, 0)) {
+                //    auto err = lua_tostring(lua_mainthread, -1);
+                //    printf("mgennerPlugin:init %s:error:%s\n", it->name.c_str(), err);
+                //}
+                lua_callfunction(lua_mainthread, this);
             }
             lua_settop(lua_mainthread, 0);
         }
@@ -119,11 +121,12 @@ void mgenner::plugin_show() {
             if (it->draw >= 0) {
                 lua_rawgeti(lua_mainthread, LUA_REGISTRYINDEX, it->draw);
                 if (lua_isfunction(lua_mainthread, -1)) {
-                    lua_pushlightuserdata(lua_mainthread, this);
-                    if (lua_pcall(lua_mainthread, 1, 0, 0)) {
-                        auto err = lua_tostring(lua_mainthread, -1);
-                        printf("mgennerPlugin:draw %s:error:%s\n", it->name.c_str(), err);
-                    }
+                    //lua_pushlightuserdata(lua_mainthread, this);
+                    //if (lua_pcall(lua_mainthread, 1, 0, 0)) {
+                    //    auto err = lua_tostring(lua_mainthread, -1);
+                    //    printf("mgennerPlugin:draw %s:error:%s\n", it->name.c_str(), err);
+                    //}
+                    lua_callfunction(lua_mainthread, this);
                 }
                 lua_settop(lua_mainthread, 0);
             }
@@ -142,11 +145,12 @@ void mgenner::shutdownPlugins() {
         if (it->shutdown >= 0) {
             lua_rawgeti(lua_mainthread, LUA_REGISTRYINDEX, it->shutdown);
             if (lua_isfunction(lua_mainthread, -1)) {
-                lua_pushlightuserdata(lua_mainthread, this);
-                if (lua_pcall(lua_mainthread, 1, 0, 0)) {
-                    auto err = lua_tostring(lua_mainthread, -1);
-                    printf("mgennerPlugin:shutdown %s:error:%s\n", it->name.c_str(), err);
-                }
+                //lua_pushlightuserdata(lua_mainthread, this);
+                //if (lua_pcall(lua_mainthread, 1, 0, 0)) {
+                //    auto err = lua_tostring(lua_mainthread, -1);
+                //    printf("mgennerPlugin:shutdown %s:error:%s\n", it->name.c_str(), err);
+                //}
+                lua_callfunction(lua_mainthread, this);
             }
             lua_settop(lua_mainthread, 0);
         }

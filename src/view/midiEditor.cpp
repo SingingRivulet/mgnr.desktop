@@ -40,6 +40,15 @@ mgenner::~mgenner() {
     if (scroll_texture_buffer) {
         SDL_DestroyTexture(scroll_texture_buffer);
     }
+    for (int i = 0; i < 128; i++) {
+        SDL_DestroyTexture(std::get<0>(toneMap[i]));
+    }
+    for (auto& it1 : words) {
+        for (auto& it2 : it1.second) {
+            SDL_DestroyTexture(std::get<0>(it2.second));
+        }
+    }
+    words.clear();
     shutdownPlugins();
     ui_shutdown();
     synth_shutdown();

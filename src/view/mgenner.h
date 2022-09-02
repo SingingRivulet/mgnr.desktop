@@ -10,6 +10,7 @@
 #include <iostream>
 #include "imfilebrowser.h"
 #include "lua.hpp"
+#include "luacall.h"
 #include "sampler.h"
 #include "synth.h"
 
