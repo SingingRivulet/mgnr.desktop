@@ -417,6 +417,7 @@ void mgenner::drawCaption(float p, const std::string& s) {
 
 void mgenner::draw() {
     this->buildScroll();
+    this->plugin_loop();
     ImGui_ImplSDLRenderer_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();

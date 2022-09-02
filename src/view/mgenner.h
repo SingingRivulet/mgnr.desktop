@@ -174,7 +174,8 @@ class mgenner : public mgnr::synth {
         std::string name;
         int init = -1;
         int shutdown = -1;
-        int draw = -1;
+        int drawUI = -1;
+        int loop = -1;
     };
     std::vector<pluginConfig*> plugins;
     std::set<pluginConfig*> plugins_showing;
@@ -182,5 +183,6 @@ class mgenner : public mgnr::synth {
     void loadConfig();
     void plugin_menu();
     void plugin_show();
+    void plugin_loop();
     void shutdownPlugins();
 };
