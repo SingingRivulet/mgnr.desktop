@@ -4,3 +4,6 @@
 [submodule "src/dep/Dear-ImGui-Lua-Binding"]
 	path = src/dep/Dear-ImGui-Lua-Binding
 	url = git@github.com:/Keiwaamung/Dear-ImGui-Lua-Binding
+[submodule "src/dep/imnodes"]
+	path = src/dep/imnodes
+	url = git@github.com:/Nelarius/imnodes

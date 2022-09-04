@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.16)
 project("mgnr")
 
 #set(CMAKE_CXX_FLAGS "-std=c++20 -ggdb")
-set(CMAKE_CXX_FLAGS "-std=c++20 -ggdb")
+set(CMAKE_CXX_FLAGS "-std=c++20 -ggdb -DLUA_USE_DLOPEN")
+set(CMAKE_C_FLAGS "-DLUA_USE_DLOPEN")
+
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-E")
 
 find_package(SDL2 2.0.17 REQUIRED)
 find_path(sdl2_INCLUDE_DIR SDL.h)
@@ -11,6 +14,7 @@ find_library(sdl2main_LIBRARY SDL2main)
 find_library(fluidsynth_LIBRARY fluidsynth)
 find_path(sdl2_ttf_INCLUDE_DIR SDL_ttf.h)
 find_library(sdl2_ttf_LIBRARY SDL2_ttf)
+find_library(dl_LIBRARY dl)
 
 add_subdirectory(modules)
 
@@ -20,6 +24,7 @@ include_directories(
     ./utils
     ./dep/
     ./dep/imgui
+    ./dep/imnodes
     ./dep/imgui/backends
     ./dep/Dear-ImGui-Lua-Binding/include
     ./dep/Dear-ImGui-Lua-Binding/src
@@ -32,7 +37,9 @@ add_executable(mgnr
     ./view/ui.cpp
     ./view/events.cpp
     ./view/synth.cpp
-    ./view/plugin.cpp
+    ./view/module.cpp
+
+    ./vscript/vscript.cpp
 
     ./mgenner/Options.cpp
     ./mgenner/midiMap.cpp
@@ -93,6 +100,8 @@ add_executable(mgnr
     ./dep/imgui/backends/imgui_impl_sdl.cpp
     ./dep/imgui/backends/imgui_impl_sdlrenderer.cpp
 
+    ./dep/imnodes/imnodes.cpp
+
     ./dep/Dear-ImGui-Lua-Binding/src/lua_imgui_enum.cpp
     ./dep/Dear-ImGui-Lua-Binding/src/lua_imgui_hash.cpp
     ./dep/Dear-ImGui-Lua-Binding/src/lua_imgui_map.cpp
@@ -106,6 +115,7 @@ target_link_libraries(mgnr
     ${SDL2_LIBRARIES}
     ${sdl2_ttf_LIBRARY}
     ${fluidsynth_LIBRARY}
+    ${dl_LIBRARY}
 )
 
 set_target_properties(mgnr PROPERTIES OUT_NAME "mgnr")

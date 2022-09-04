@@ -6,6 +6,8 @@
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_sdlrenderer.h>
+#include <imnodes.h>
+#include <imnodes_internal.h>
 #include <filesystem>
 #include <iostream>
 #include "imfilebrowser.h"
@@ -133,6 +135,7 @@ class mgenner : public mgnr::synth {
 
     ImGui::FileBrowser fileDialog_loadMidi;
     ImGui::FileBrowser fileDialog_saveMidi;
+    ImGui::FileBrowser fileDialog_importMidi;
 
     char defaultInfoBuffer[128];
     void ui_init();
@@ -148,7 +151,9 @@ class mgenner : public mgnr::synth {
     void saveMidiFile();
 
     inline void checkfocus() {
-        if (ImGui::IsItemFocused() || ImGui::IsWindowFocused() || ImGui::IsWindowHovered()) {
+        if (ImGui::IsItemFocused() ||
+            ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) ||
+            ImGui::IsWindowHovered(ImGuiFocusedFlags_RootAndChildWindows)) {
             focusCanvas = false;
         }
     }
@@ -168,21 +173,38 @@ class mgenner : public mgnr::synth {
     void onScriptCmd(const char* cmd) override;
     /////////////////////////////////////////////////////////////////////////////
     //插件
+    bool module_importFile = false;
     std::string path_font = "./res/font/font.ttf";
     std::string path_sf2 = "./res/soundfont/sndfnt.sf2";
-    struct pluginConfig {
+
+    struct moduleConfig {
         std::string name;
         int init = -1;
         int shutdown = -1;
         int drawUI = -1;
         int loop = -1;
     };
-    std::vector<pluginConfig*> plugins;
-    std::set<pluginConfig*> plugins_showing;
+    std::vector<moduleConfig*> modules;
+    std::vector<moduleConfig*> modules_loop;
+    std::set<moduleConfig*> modules_showing;
+
     lua_State* lua_mainthread;
     void loadConfig();
-    void plugin_menu();
-    void plugin_show();
-    void plugin_loop();
-    void shutdownPlugins();
+    void module_menu();
+    char module_importFilePath[512];
+    void module_importWindow();
+    void module_show();
+    void module_loop();
+    void shutdownModules();
+
+    //节点编辑器
+    struct module_node {
+        moduleConfig* value;
+    };
+    struct module_link {
+        int start_attr, end_attr;
+    };
+    std::map<int, module_node> module_nodes;
+    std::map<int, module_link> module_links;
+    int module_currentId = (1 << 8);
 };

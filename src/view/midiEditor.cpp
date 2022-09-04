@@ -49,7 +49,7 @@ mgenner::~mgenner() {
         }
     }
     words.clear();
-    shutdownPlugins();
+    shutdownModules();
     ui_shutdown();
     synth_shutdown();
     if (renderer) {
@@ -417,7 +417,7 @@ void mgenner::drawCaption(float p, const std::string& s) {
 
 void mgenner::draw() {
     this->buildScroll();
-    this->plugin_loop();
+    this->module_loop();
     ImGui_ImplSDLRenderer_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();

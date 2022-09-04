@@ -1,3 +1,4 @@
+local libhelloworld = require("modules.helloworld.libhelloworld")
 local index = 10
 return {
     name = "helloworld",
@@ -7,8 +8,11 @@ return {
     shutdown = function()
         print("helloworld_shutdown")
     end,
-    draw = function()
+    drawUI = function()
         index = index + 1
         imgui.ImGui.TextUnformatted("helloworld_draw" .. index)
+        libhelloworld.drawUI()
+    end,
+    loop = function()
     end
 }

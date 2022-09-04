@@ -55,8 +55,8 @@ void mgenner::ui_loop() {
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("扩展")) {
-                plugin_menu();
+            if (ImGui::BeginMenu("工具")) {
+                module_menu();
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
@@ -562,13 +562,15 @@ void mgenner::ui_loop() {
         ImGui::End();
     }
 
-    plugin_show();
+    module_show();
 
     fileDialog_saveMidi.Display();
     fileDialog_loadMidi.Display();
+    fileDialog_importMidi.Display();
     if (ImGui::IsAnyItemHovered() ||
         !fileDialog_loadMidi.focusCanvas ||
-        !fileDialog_saveMidi.focusCanvas) {
+        !fileDialog_saveMidi.focusCanvas ||
+        !fileDialog_importMidi.focusCanvas) {
         focusCanvas = false;
     }
     if (!show_edit_window) {
