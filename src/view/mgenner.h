@@ -208,9 +208,9 @@ class mgenner : public mgnr::synth {
             scriptClass;
         vscript_t();
         void onAddNode() override;
-        mgnr::vscript::port* addNodeAtPort = nullptr;
+        mgnr::vscript::port_output* addNodeAtPort = nullptr;
         ImVec2 addNodeAtPort_window_pos;
-        void addNodeAt(mgnr::vscript::port* p) override;
+        void addNodeAt(mgnr::vscript::port_output* p) override;
     } vscript;
     std::vector<std::string> scriptConsole{};
     void vscript_init();

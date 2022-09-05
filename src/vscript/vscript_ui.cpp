@@ -35,7 +35,7 @@ void script_ui::draw(bool* showing) {
             ImNodes::EndNodeTitleBar();
 
             for (auto& it : node.second->input) {
-                if (it->data != nullptr) {
+                if (!it->data.empty()) {
                     ImNodes::PushColorStyle(ImNodesCol_Pin, IM_COL32(11, 192, 11, 255));
                     ImNodes::PushColorStyle(ImNodesCol_PinHovered, IM_COL32(32, 255, 32, 255));
                 } else {
@@ -88,7 +88,7 @@ void script_ui::draw(bool* showing) {
 
         link_selected.clear();
         for (auto& link : links) {
-            if (link.second->from->data != nullptr || link.second->to->data != nullptr) {
+            if (link.second->from->data != nullptr || !link.second->to->data.empty()) {
                 ImNodes::PushColorStyle(ImNodesCol_Link, IM_COL32(11, 192, 11, 255));
                 ImNodes::PushColorStyle(ImNodesCol_LinkHovered, IM_COL32(32, 255, 32, 255));
                 ImNodes::PushColorStyle(ImNodesCol_LinkSelected, IM_COL32(24, 233, 24, 255));
@@ -111,36 +111,40 @@ void script_ui::draw(bool* showing) {
         //查看节点保存的数据
         int id;
         if (ImNodes::IsPinHovered(&id)) {
-            port* p = nullptr;
-            auto iti = ports_input.find(id);
-            if (iti != ports_input.end()) {
-                p = iti->second;
-            } else {
-                auto ito = ports_output.find(id);
-                if (ito != ports_output.end()) {
-                    p = ito->second;
+            auto ito = ports_output.find(id);
+            if (ito != ports_output.end()) {
+                port_output* p = ito->second;
+
+                auto type = p->type.empty() ? "无类型" : p->type.c_str();
+                if (p->data != nullptr) {
+                    std::string value;
+                    try {
+                        switch (p->data->data.index()) {
+                            case 0:
+                                value = std::to_string(std::get<int>(p->data->data));
+                                break;
+                            case 1:
+                                value = std::get<std::string>(p->data->data);
+                                break;
+                        }
+                    } catch (...) {
+                        value = "错误类型";
+                    }
+                    ImGui::SetTooltip(
+                        "类型：%s\n值：%s", type, value.c_str());
+                } else {
+                    ImGui::SetTooltip(
+                        "类型：%s", type);
                 }
             }
-            auto type = p->type.empty() ? "无类型" : p->type.c_str();
-            if (p->data != nullptr) {
-                std::string value;
-                try {
-                    switch (p->data->data.index()) {
-                        case 0:
-                            value = std::to_string(std::get<int>(p->data->data));
-                            break;
-                        case 1:
-                            value = std::get<std::string>(p->data->data);
-                            break;
-                    }
-                } catch (...) {
-                    value = "错误类型";
-                }
+
+            auto iti = ports_input.find(id);
+            if (iti != ports_input.end()) {
+                port_input* p = iti->second;
+
+                auto type = p->type.empty() ? "无类型" : p->type.c_str();
                 ImGui::SetTooltip(
-                    "类型：%s\n值：%s", type, value.c_str());
-            } else {
-                ImGui::SetTooltip(
-                    "类型：%s", type);
+                    "类型：%s\n缓冲区数据个数：%s", type, p->data.size());
             }
         }
         if (ImNodes::IsLinkDropped(&id)) {

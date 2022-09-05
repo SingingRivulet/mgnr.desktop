@@ -12,7 +12,7 @@ struct script_ui : public script {
     std::vector<node*> node_selected{};
     std::vector<link*> link_selected{};
     void draw(bool* showing = nullptr);
-    virtual void addNodeAt(port* p) = 0;
+    virtual void addNodeAt(port_output* p) = 0;
     virtual void onAddNode() = 0;
 };
 

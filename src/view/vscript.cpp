@@ -38,7 +38,7 @@ struct node_getFile : public mgnr::vscript::node_ui {
         this->global = global;
         bzero(module_importFilePath, sizeof(module_importFilePath));
         this->name = "加载文件";
-        std::unique_ptr<mgnr::vscript::port> out0(new mgnr::vscript::port);
+        std::unique_ptr<mgnr::vscript::port_output> out0(new mgnr::vscript::port_output);
         out0->name = "文件路径";
         out0->type = "字符串";
         this->output.push_back(std::move(out0));
@@ -49,7 +49,7 @@ struct node_getFile : public mgnr::vscript::node_ui {
             std::string("加载文件:") + module_importFilePath);
         auto p = std::make_shared<mgnr::vscript::value>();
         p->data = module_importFilePath;
-        this->output[0]->data = p;
+        this->output[0]->send(p);
     }
     void draw() override {
         if (global->fileDialog_importMidi.HasSelected()) {
@@ -72,8 +72,14 @@ struct node_getFile : public mgnr::vscript::node_ui {
         if (ImGui::Button("选择文件")) {
             global->fileDialog_importMidi.Open();
         }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("设置该节点的输出值");
+        }
         if (ImGui::Button("执行")) {
             parent->exec(this);
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("向右边端点所连接的节点发送数据");
         }
         ImNodes::EndStaticAttribute();
     }
@@ -85,17 +91,20 @@ struct node_print : public mgnr::vscript::node_ui {
     node_print(mgenner* global) {
         this->global = global;
         this->name = "输出";
-        std::unique_ptr<mgnr::vscript::port> in0(new mgnr::vscript::port);
+        std::unique_ptr<mgnr::vscript::port_input> in0(new mgnr::vscript::port_input);
         in0->name = "输出字符串";
         in0->type = "字符串";
         this->input.push_back(std::move(in0));
     }
     void exec() override {
-        try {
-            global->scriptConsole.push_back(std::get<std::string>(input[0]->data->data).c_str());
-        } catch (...) {
-            global->scriptConsole.push_back("节点输出失败");
+        for (auto& it : input[0]->data) {
+            try {
+                global->scriptConsole.push_back(std::get<std::string>(it->data).c_str());
+            } catch (...) {
+                global->scriptConsole.push_back("节点输出失败");
+            }
         }
+        input[0]->data.clear();
     }
     ~node_print() override {}
 };
@@ -123,7 +132,7 @@ void mgenner::vscript_init() {
             }));
 }
 
-void mgenner::vscript_t::addNodeAt(mgnr::vscript::port* p) {
+void mgenner::vscript_t::addNodeAt(mgnr::vscript::port_output* p) {
     addNodeMode = true;
     addNodeAtPort = p;
     addNodeAtPort_window_pos = ImVec2(global->mouse_x, global->mouse_y);

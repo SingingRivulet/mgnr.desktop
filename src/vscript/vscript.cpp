@@ -57,8 +57,8 @@ void script::removeNode(int id) {
 }
 
 link* script::addLink(
-    port* from,
-    port* to) {
+    port_output* from,
+    port_input* to) {
     if (from->type != to->type && !to->type.empty()) {
         return nullptr;
     }
@@ -125,7 +125,7 @@ void script::exec_begin() {
     activeNodes.clear();
     printf("mgenner:vscript init\n");
     for (auto& it : ports_input) {
-        it.second->data = nullptr;
+        it.second->data.clear();
     }
     for (auto& it : ports_output) {
         it.second->data = nullptr;
@@ -145,6 +145,14 @@ void script::exec_loop() {
     }
 }
 
+void port_output::send(std::shared_ptr<value> d) {
+    data = d;
+    for (auto& link : links) {
+        link->to->data.push_back(data);  //传输数据
+        parent->affect.insert(link->to->parent);
+    }
+}
+
 void script::exec_step() {
     activeNodes_buffer.clear();
     for (auto& it : activeNodes) {
@@ -160,28 +168,23 @@ bool script::exec_running() {
 }
 void script::exec_node(node* n) {
     n->exec();
-    for (auto& input : n->input) {
-        input->data = nullptr;
-    }
     for (auto& output : n->output) {
-        linkNodes_buffer.clear();
-        for (auto& link : output->links) {
-            link->to->data = output->data;  //传输数据
-            linkNodes_buffer.insert(link->to->parent);
-        }
-        for (auto& it : linkNodes_buffer) {
+        for (auto& it : n->affect) {
             //检查是否可以执行
             bool canExex = true;
-            for (auto& it : it->input) {
-                if (it->data == nullptr && (!it->links.empty())) {
-                    canExex = false;
-                    break;
+            if (it->needFullInput) {
+                for (auto& it : it->input) {
+                    if (it->data.empty() && (!it->links.empty())) {
+                        canExex = false;
+                        break;
+                    }
                 }
             }
             if (canExex) {
                 activeNodes.insert(it);
             }
         }
+        n->affect.clear();
     }
 }
 
