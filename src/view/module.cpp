@@ -1,8 +1,6 @@
 #include "lua_imgui.hpp"
 #include "mgenner.h"
 void mgenner::loadConfig() {
-    bzero(module_importFilePath, sizeof(module_importFilePath));
-
     lua_mainthread = luaL_newstate();
     luaL_openlibs(lua_mainthread);
     luaopen_imgui(lua_mainthread);
@@ -114,13 +112,12 @@ void mgenner::loadConfig() {
             lua_settop(lua_mainthread, 0);
         }
     }
-
-    ImNodes::CreateContext();
-    ImNodes::SetNodeGridSpacePos(1, ImVec2(200.0f, 200.0f));
+    vscript_init();
 }
+
 void mgenner::module_menu() {
-    if (ImGui::MenuItem("导入文件")) {
-        module_importFile = true;
+    if (ImGui::MenuItem("节点控制台")) {
+        module_showNodeEditor = true;
     }
     ImGui::MenuItem("扩展配置", NULL, false, false);
     for (auto it : modules) {
@@ -153,41 +150,7 @@ void mgenner::module_show() {
         modules_showing.erase(it);
     }
 
-    module_importWindow();
-
-    /*
-    ImGui::Begin("控制");
-
-    auto wpos_min = ImGui::GetWindowPos();
-    auto wpos_max = ImVec2(
-        wpos_min.x + ImGui::GetWindowWidth(),
-        wpos_min.y + ImGui::GetWindowHeight());
-    checkfocus();
-    if (ImGui::IsMouseHoveringRect(wpos_min, wpos_max)) {
-        focusCanvas = false;
-    }
-
-    ImNodes::BeginNodeEditor();
-    ImNodes::BeginNode(1);
-
-    ImNodes::BeginNodeTitleBar();
-    ImGui::TextUnformatted("播放输出");
-    ImNodes::EndNodeTitleBar();
-
-    //ImNodes::BeginInputAttribute(2);
-    //ImGui::Text("input");
-    //ImNodes::EndInputAttribute();
-
-    ImNodes::BeginOutputAttribute(3);
-    ImGui::Indent(40);
-    ImGui::Text("输出");
-    ImNodes::EndOutputAttribute();
-
-    ImNodes::EndNode();
-    ImNodes::EndNodeEditor();
-
-    ImGui::End();
-    */
+    module_nodeEditor();
 }
 void mgenner::module_loop() {
     for (auto it : modules_loop) {
@@ -197,6 +160,15 @@ void mgenner::module_loop() {
                 lua_callfunction(lua_mainthread, this);
             }
             lua_settop(lua_mainthread, 0);
+        }
+    }
+
+    vscript.exec_loop();
+    for (int i = 0; i < 64; ++i) {
+        if (vscript.exec_running()) {
+            vscript.exec_step();
+        } else {
+            break;
         }
     }
 }
@@ -213,105 +185,4 @@ void mgenner::shutdownModules() {
     }
     lua_close(lua_mainthread);
     ImNodes::DestroyContext();
-}
-
-void mgenner::module_importWindow() {
-    ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
-    if (module_importFile && ImGui::Begin("导入文件", &module_importFile)) {
-        auto wpos_min = ImGui::GetWindowPos();
-        auto wpos_max = ImVec2(
-            wpos_min.x + ImGui::GetWindowWidth(),
-            wpos_min.y + ImGui::GetWindowHeight());
-        checkfocus();
-        if (ImGui::IsMouseHoveringRect(wpos_min, wpos_max)) {
-            focusCanvas = false;
-        }
-
-        if (fileDialog_importMidi.HasSelected()) {
-            snprintf(module_importFilePath,
-                     sizeof(module_importFilePath), "%s",
-                     fileDialog_importMidi.GetSelected().c_str());
-            fileDialog_importMidi.ClearSelected();
-        }
-        ImNodes::BeginNodeEditor();
-
-        //添加节点
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
-            ImNodes::IsEditorHovered() && ImGui::IsKeyReleased(SDL_SCANCODE_A)) {
-            const int node_id = module_currentId;
-            module_currentId += (1 << 8);
-            ImNodes::SetNodeScreenSpacePos(node_id, ImGui::GetMousePos());
-            ImNodes::SnapNodeToGrid(node_id);
-            module_node n;
-            module_nodes[node_id] = n;
-        }
-
-        //主节点
-        ImNodes::BeginNode(0);
-        ImNodes::BeginNodeTitleBar();
-        ImGui::TextUnformatted("加载文件");
-        ImNodes::EndNodeTitleBar();
-        ImNodes::BeginStaticAttribute(1);
-        if (module_importFilePath[0] != '\0') {
-            auto file = strrchr(module_importFilePath, '/');
-            if (file == nullptr) {
-                file = module_importFilePath;
-            } else {
-                ++file;
-            }
-            ImGui::TextWrapped("%s", file);
-        }
-        if (ImGui::Button("选择文件")) {
-            fileDialog_importMidi.Open();
-        }
-        ImNodes::EndStaticAttribute();
-        ImNodes::BeginOutputAttribute(2);
-        ImGui::Indent(40);
-        ImGui::Text("输出");
-        ImNodes::EndOutputAttribute();
-        ImNodes::EndNode();
-
-        for (auto& node : module_nodes) {
-            ImNodes::BeginNode(node.first);
-
-            ImNodes::BeginNodeTitleBar();
-            ImGui::TextUnformatted("node");
-            ImNodes::EndNodeTitleBar();
-
-            ImNodes::BeginInputAttribute(node.first + 1);
-            ImGui::TextUnformatted("input");
-            ImNodes::EndInputAttribute();
-
-            ImNodes::BeginOutputAttribute(node.first + 2);
-            const float text_width = ImGui::CalcTextSize("output").x;
-            ImGui::Indent(120.f + ImGui::CalcTextSize("value").x - text_width);
-            ImGui::TextUnformatted("output");
-            ImNodes::EndOutputAttribute();
-
-            ImNodes::EndNode();
-        }
-
-        for (auto& link : module_links) {
-            ImNodes::Link(link.first, link.second.start_attr, link.second.end_attr);
-        }
-
-        ImNodes::EndNodeEditor();
-        {  //创建节点
-            module_link link;
-            if (ImNodes::IsLinkCreated(&link.start_attr, &link.end_attr)) {
-                const int node_id = module_currentId;
-                module_currentId += (1 << 8);
-                module_links[node_id] = link;
-            }
-        }
-
-        {  //删除节点
-            int link_id;
-            if (ImNodes::IsLinkDestroyed(&link_id)) {
-                module_links.erase(link_id);
-            }
-        }
-
-        ImGui::End();
-    }
 }

@@ -76,8 +76,6 @@ void mgenner::processEvents() {
                 }
             }
         } else if (event.type == SDL_MOUSEMOTION) {  //移动鼠标
-            mouse_x = event.motion.x;
-            mouse_y = event.motion.y;
             clickToDisplay(event.motion.x, event.motion.y);
             if (selectingByBox) {
                 selectBoxXend = event.motion.x;

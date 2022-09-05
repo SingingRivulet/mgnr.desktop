@@ -1,6 +1,11 @@
 #include "vscript.h"
 
-void mgnr::vscript::script::addNode(std::unique_ptr<mgnr::vscript::node> n) {
+namespace mgnr::vscript {
+
+node::~node() {
+}
+
+node* script::addNode(std::unique_ptr<node> n) {
     n->id = ++current_id;
     for (auto& it : n->input) {
         it->id = ++current_id;
@@ -14,14 +19,18 @@ void mgnr::vscript::script::addNode(std::unique_ptr<mgnr::vscript::node> n) {
         ports_output[it->id] = it.get();
     }
     n->parent = this;
+    n->staticAttributeId = ++current_id;
+    auto res = n.get();
     nodes[n->id] = std::move(n);
+    return res;
 }
 
-void mgnr::vscript::script::removeNode(mgnr::vscript::node* n) {
+void script::removeNode(node* n) {
+    activeNodes.erase(n);
     for (auto& it : n->input) {
         ports_input.erase(it->id);
         for (auto l : it->links) {
-            auto k = std::pair<int, int>(l->from->id, l->from->id);
+            auto k = std::pair<int, int>(l->from->id, l->to->id);
             l->from->links.erase(l);
             links_map.erase(k);
             links.erase(l->id);
@@ -31,7 +40,7 @@ void mgnr::vscript::script::removeNode(mgnr::vscript::node* n) {
     for (auto& it : n->output) {
         ports_output.erase(it->id);
         for (auto l : it->links) {
-            auto k = std::pair<int, int>(l->from->id, l->from->id);
+            auto k = std::pair<int, int>(l->from->id, l->to->id);
             l->to->links.erase(l);
             links_map.erase(k);
             links.erase(l->id);
@@ -40,10 +49,19 @@ void mgnr::vscript::script::removeNode(mgnr::vscript::node* n) {
     }
     nodes.erase(n->id);
 }
+void script::removeNode(int id) {
+    auto it = nodes.find(id);
+    if (it != nodes.end()) {
+        removeNode(it->second.get());
+    }
+}
 
-mgnr::vscript::link* mgnr::vscript::script::addLink(
-    mgnr::vscript::port* from,
-    mgnr::vscript::port* to) {
+link* script::addLink(
+    port* from,
+    port* to) {
+    if (from->type != to->type && !to->type.empty()) {
+        return nullptr;
+    }
     auto k = std::pair<int, int>(from->id, to->id);
     if (links_map.find(k) == links_map.end()) {
         std::unique_ptr<link> l(new link);
@@ -60,35 +78,74 @@ mgnr::vscript::link* mgnr::vscript::script::addLink(
     return nullptr;
 }
 
-void mgnr::vscript::script::delLink(mgnr::vscript::link* l) {
-    auto k = std::pair<int, int>(l->from->id, l->from->id);
+link* script::addLink(int from, int to) {
+    auto itf = ports_output.find(from);
+    auto itt = ports_input.find(to);
+    if (itf != ports_output.end() &&
+        itt != ports_input.end()) {
+        return addLink(itf->second, itt->second);
+    }
+    return nullptr;
+}
+
+void script::delLink(link* l) {
+    auto k = std::pair<int, int>(l->from->id, l->to->id);
     l->from->links.erase(l);
     l->to->links.erase(l);
     links_map.erase(k);
     links.erase(l->id);
 }
-
-void mgnr::vscript::script::exec() {
-    exec_begin();
-    while (exec_running()) {
-        exec_step();
+void script::delLink(int from, int to) {
+    auto k = std::pair<int, int>(from, to);
+    auto it = links_map.find(k);
+    if (it != links_map.end()) {
+        auto l = it->second;
+        l->from->links.erase(l);
+        l->to->links.erase(l);
+        links_map.erase(it);
+        links.erase(l->id);
     }
 }
-void mgnr::vscript::script::exec_begin() {
+void script::delLink(int id) {
+    auto it = links.find(id);
+    if (it != links.end()) {
+        auto l = it->second.get();
+        auto k = std::pair<int, int>(l->from->id, l->to->id);
+        l->from->links.erase(l);
+        l->to->links.erase(l);
+        links_map.erase(k);
+        links.erase(it);
+    }
+}
+
+void script::exec(node* n) {
+    activeNodes.insert(n);
+}
+void script::exec_begin() {
     activeNodes.clear();
+    printf("mgenner:vscript init\n");
     for (auto& it : ports_input) {
         it.second->data = nullptr;
     }
     for (auto& it : ports_output) {
         it.second->data = nullptr;
     }
-    for (auto& it : nodes) {
-        if (it.second->input.empty()) {
-            activeNodes.insert((it.second.get()));
+}
+
+void script::exec_loop() {
+    for (auto it : removeList) {
+        if (it->removeable) {
+            removeNode(it);
         }
     }
+    removeList.clear();
+    if (reset) {
+        exec_begin();
+        reset = false;
+    }
 }
-void mgnr::vscript::script::exec_step() {
+
+void script::exec_step() {
     activeNodes_buffer.clear();
     for (auto& it : activeNodes) {
         activeNodes_buffer.push_back(it);
@@ -98,10 +155,10 @@ void mgnr::vscript::script::exec_step() {
         exec_node(it);
     }
 }
-bool mgnr::vscript::script::exec_running() {
-    return activeNodes.empty();
+bool script::exec_running() {
+    return !activeNodes.empty();
 }
-void mgnr::vscript::script::exec_node(mgnr::vscript::node* n) {
+void script::exec_node(node* n) {
     n->exec();
     for (auto& input : n->input) {
         input->data = nullptr;
@@ -116,7 +173,7 @@ void mgnr::vscript::script::exec_node(mgnr::vscript::node* n) {
             //检查是否可以执行
             bool canExex = true;
             for (auto& it : it->input) {
-                if (it->data == nullptr) {
+                if (it->data == nullptr && (!it->links.empty())) {
                     canExex = false;
                     break;
                 }
@@ -127,3 +184,5 @@ void mgnr::vscript::script::exec_node(mgnr::vscript::node* n) {
         }
     }
 }
+
+}  // namespace mgnr::vscript

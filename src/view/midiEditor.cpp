@@ -107,6 +107,9 @@ void mgenner::loop() {
                    (event.key.keysym.sym == SDLK_LSHIFT ||
                     event.key.keysym.sym == SDLK_RSHIFT)) {
             button_shift = false;
+        } else if (event.type == SDL_MOUSEMOTION) {
+            mouse_x = event.motion.x;
+            mouse_y = event.motion.y;
         } else {
             events.push_back(event);
         }

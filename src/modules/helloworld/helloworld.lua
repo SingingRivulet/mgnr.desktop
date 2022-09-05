@@ -11,7 +11,7 @@ return {
     drawUI = function()
         index = index + 1
         imgui.ImGui.TextUnformatted("helloworld_draw" .. index)
-        libhelloworld.drawUI()
+        --libhelloworld.drawUI()
     end,
     loop = function()
     end

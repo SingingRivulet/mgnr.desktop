@@ -38,8 +38,10 @@ add_executable(mgnr
     ./view/events.cpp
     ./view/synth.cpp
     ./view/module.cpp
+    ./view/vscript.cpp
 
     ./vscript/vscript.cpp
+    ./vscript/vscript_ui.cpp
 
     ./mgenner/Options.cpp
     ./mgenner/midiMap.cpp

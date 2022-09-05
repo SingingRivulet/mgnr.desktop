@@ -15,6 +15,7 @@
 #include "luacall.h"
 #include "sampler.h"
 #include "synth.h"
+#include "vscript/vscript_ui.h"
 
 class mgenner : public mgnr::synth {
    public:
@@ -173,7 +174,7 @@ class mgenner : public mgnr::synth {
     void onScriptCmd(const char* cmd) override;
     /////////////////////////////////////////////////////////////////////////////
     //插件
-    bool module_importFile = false;
+    bool module_showNodeEditor = false;
     std::string path_font = "./res/font/font.ttf";
     std::string path_sf2 = "./res/soundfont/sndfnt.sf2";
 
@@ -191,20 +192,26 @@ class mgenner : public mgnr::synth {
     lua_State* lua_mainthread;
     void loadConfig();
     void module_menu();
-    char module_importFilePath[512];
-    void module_importWindow();
+    void module_nodeEditor();
     void module_show();
     void module_loop();
     void shutdownModules();
 
     //节点编辑器
-    struct module_node {
-        moduleConfig* value;
-    };
-    struct module_link {
-        int start_attr, end_attr;
-    };
-    std::map<int, module_node> module_nodes;
-    std::map<int, module_link> module_links;
-    int module_currentId = (1 << 8);
+    struct vscript_t : mgnr::vscript::script_ui {
+        mgenner* global;
+        bool addNodeMode = false;
+        std::vector<
+            std::tuple<
+                std::string,
+                std::function<mgnr::vscript::node*(vscript_t*)>>>
+            scriptClass;
+        vscript_t();
+        void onAddNode() override;
+        mgnr::vscript::port* addNodeAtPort = nullptr;
+        ImVec2 addNodeAtPort_window_pos;
+        void addNodeAt(mgnr::vscript::port* p) override;
+    } vscript;
+    std::vector<std::string> scriptConsole{};
+    void vscript_init();
 };
