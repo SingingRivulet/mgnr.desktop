@@ -178,15 +178,18 @@ class mgenner : public mgnr::synth {
     std::string path_font = "./res/font/font.ttf";
     std::string path_sf2 = "./res/soundfont/sndfnt.sf2";
 
+    struct vclass_t;
     struct moduleConfig {
         std::string name;
         int init = -1;
         int shutdown = -1;
         int drawUI = -1;
         int loop = -1;
+        std::unique_ptr<vclass_t> vclass;
     };
     std::vector<moduleConfig*> modules;
     std::vector<moduleConfig*> modules_loop;
+    std::vector<moduleConfig*> modules_haveUI;
     std::set<moduleConfig*> modules_showing;
 
     lua_State* lua_mainthread;
@@ -198,6 +201,13 @@ class mgenner : public mgnr::synth {
     void shutdownModules();
 
     //节点编辑器
+    struct vclass_t {
+        bool needFullInput = true;
+        std::string name;
+        std::vector<std::tuple<std::string, std::string>> inputs, outputs;
+        int exec = -1;
+        int draw = -1;
+    };
     struct vscript_t : mgnr::vscript::script_ui {
         mgenner* global;
         bool addNodeMode = false;
@@ -205,6 +215,13 @@ class mgenner : public mgnr::synth {
             std::tuple<
                 std::string,
                 std::function<mgnr::vscript::node*(vscript_t*)>>>
+            scriptClass_other;
+        std::map<
+            std::string,
+            std::vector<
+                std::tuple<
+                    std::string,
+                    std::function<mgnr::vscript::node*(vscript_t*)>>>>
             scriptClass;
         vscript_t();
         void onAddNode() override;

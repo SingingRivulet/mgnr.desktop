@@ -11,8 +11,25 @@ return {
     drawUI = function()
         index = index + 1
         imgui.ImGui.TextUnformatted("helloworld_draw" .. index)
-        --libhelloworld.drawUI()
+        -- libhelloworld.drawUI()
     end,
     loop = function()
-    end
+    end,
+    vscript = {
+        input = {{
+            name = "输入0",
+            type = "字符串"
+        }, {
+            name = "输入1",
+            type = "字符串"
+        }},
+        output = {},
+        exec = function(global, self)
+            local i0 = vscript.getInput(self, 0)
+            local i1 = vscript.getInput(self, 1)
+            vscript.print(self, "exec helloworld")
+            vscript.print(self, "i0=" .. i0)
+            vscript.print(self, "i1=" .. i1)
+        end
+    }
 }

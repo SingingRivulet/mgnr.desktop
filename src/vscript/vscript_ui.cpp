@@ -119,13 +119,10 @@ void script_ui::draw(bool* showing) {
                 if (p->data != nullptr) {
                     std::string value;
                     try {
-                        switch (p->data->data.index()) {
-                            case 0:
-                                value = std::to_string(std::get<int>(p->data->data));
-                                break;
-                            case 1:
-                                value = std::get<std::string>(p->data->data);
-                                break;
+                        if (p->data->data.type() == typeid(std::string)) {
+                            value = std::any_cast<std::string>(p->data->data);
+                        } else if (p->data->data.type() == typeid(int)) {
+                            value = std::to_string(std::any_cast<int>(p->data->data));
                         }
                     } catch (...) {
                         value = "错误类型";
@@ -144,7 +141,7 @@ void script_ui::draw(bool* showing) {
 
                 auto type = p->type.empty() ? "无类型" : p->type.c_str();
                 ImGui::SetTooltip(
-                    "类型：%s\n缓冲区数据个数：%s", type, p->data.size());
+                    "类型：%s\n缓冲区数据个数：%d", type, p->data.size());
             }
         }
         if (ImNodes::IsLinkDropped(&id)) {

@@ -1,9 +1,9 @@
 #pragma once
+#include <any>
 #include <list>
 #include <map>
 #include <memory>
 #include <set>
-#include <variant>
 #include <vector>
 #include "imnodes.h"
 #include "imnodes_internal.h"
@@ -15,7 +15,7 @@ struct script;
 struct node;
 
 struct value {
-    std::variant<int, std::string> data;
+    std::any data;
 };
 
 struct link {
