@@ -44,13 +44,6 @@ void editWindow::onLoadName(const mgnr::stringPool::stringPtr& name) {
 }
 
 void editWindow::drawNote_begin() {
-    SDL_Rect rect;
-    rect.x = 0;
-    rect.y = 0;
-    rect.w = windowWidth;
-    rect.h = windowHeight;
-    SDL_SetRenderDrawColor(parent->renderer, 0, 0, 30, SDL_ALPHA_OPAQUE);
-    SDL_RenderFillRect(parent->renderer, &rect);
 }
 
 void editWindow::drawNote(int fx, int fy, int tx, int ty, int volume, const mgnr::stringPool::stringPtr& info, bool selected, bool onlydisplay) {

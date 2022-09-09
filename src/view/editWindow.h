@@ -2,7 +2,6 @@
 #include "renderContext.h"
 class editWindow : public mgnr::synth {
    public:
-
     mgnr::stringPool::stringPtr lastDefaultInfo;
     int lastSection = -1;
 
@@ -33,6 +32,21 @@ class editWindow : public mgnr::synth {
     void playStep();
 
     std::string midiFilePath = "";
+    inline static const char* getFileName(const char* name) {
+        auto out = strrchr(name, '/');
+        if (out == nullptr) {
+            out = name;
+        } else {
+            ++out;
+        }
+        return out;
+    }
+    inline void setMidiFilePath(const std::string& name) {
+        midiFilePath = name;
+        fileName = getFileName(name.c_str());
+        needUpdateWindowTitle = true;
+    }
+    std::string fileName = "";
 
     bool show_edit_window = false;
     bool show_trackSelect_window = false;

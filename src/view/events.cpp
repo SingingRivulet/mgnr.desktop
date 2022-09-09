@@ -183,7 +183,17 @@ void renderContext::processEvents() {
                     break;
                 case SDLK_o:
                     if (button_ctrl) {
+                        openMidiDialog();
+                    }
+                    break;
+                case SDLK_l:
+                    if (button_ctrl) {
                         loadMidiDialog();
+                    }
+                    break;
+                case SDLK_n:
+                    if (button_ctrl) {
+                        createWindow();
                     }
                     break;
                 case SDLK_EQUALS:

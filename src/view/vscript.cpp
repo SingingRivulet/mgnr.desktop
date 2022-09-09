@@ -61,12 +61,7 @@ struct node_getFile : public mgnr::vscript::node_ui {
 
         ImNodes::BeginStaticAttribute(staticAttributeId);
         if (module_importFilePath[0] != '\0') {
-            auto file = strrchr(module_importFilePath, '/');
-            if (file == nullptr) {
-                file = module_importFilePath;
-            } else {
-                ++file;
-            }
+            auto file = editWindow::getFileName(module_importFilePath);
             ImGui::TextWrapped("%s", file);
         }
         if (ImGui::Button("选择文件")) {

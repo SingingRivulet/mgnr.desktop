@@ -29,8 +29,14 @@ void renderContext::ui_loop() {
                          ImGuiWindowFlags_NoBringToFrontOnFocus)) {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("文件")) {
+                if (ImGui::MenuItem("打开", "ctrl+o")) {
+                    openMidiDialog();
+                }
+                if (ImGui::MenuItem("新建", "ctrl+n")) {
+                    createWindow();
+                }
                 if (drawing) {
-                    if (ImGui::MenuItem("载入", "ctrl+o")) {
+                    if (ImGui::MenuItem("载入", "ctrl+l")) {
                         loadMidiDialog();
                     }
                     if (ImGui::MenuItem("保存", "ctrl+s")) {
@@ -114,11 +120,39 @@ void renderContext::ui_loop() {
             loadMidiFile(fileDialog_loadMidi.GetSelected().string());
             fileDialog_loadMidi.ClearSelected();
         }
+        if (fileDialog_openMidi.HasSelected()) {
+            openMidiFile(fileDialog_openMidi.GetSelected().string());
+            fileDialog_openMidi.ClearSelected();
+        }
         if (fileDialog_saveMidi.HasSelected()) {
             printf("mgenner:save:%s\n", fileDialog_saveMidi.GetSelected().string().c_str());
             saveMidiFile(fileDialog_saveMidi.GetSelected().string());
             fileDialog_saveMidi.ClearSelected();
         }
+    }
+    if (ImGui::BeginTabBar("打开的文件")) {
+        for (auto& it : editWindows) {
+            bool opened = true;
+            char buf[128];
+            const char* tabTitle;
+            if (it.second->fileName.empty()) {
+                tabTitle = buf;
+                snprintf(buf, sizeof(buf), "新文件%d", it.first);
+            } else {
+                tabTitle = it.second->fileName.c_str();
+            }
+            if (ImGui::BeginTabItem(tabTitle, &opened, ImGuiTabItemFlags_None)) {
+                auto p = it.second.get();
+                if (p != drawing) {
+                    showWindow(p);
+                }
+                if (!opened) {
+                    closeWindow(it.first);
+                }
+                ImGui::EndTabItem();
+            }
+        }
+        ImGui::EndTabBar();
     }
     menuHeight = ImGui::CalcWindowNextAutoFitSize(ImGui::GetCurrentWindow()).y;
     ImGui::SetWindowSize(ImVec2(windowWidth, menuHeight));
@@ -581,10 +615,12 @@ void renderContext::ui_loop() {
 
     fileDialog_saveMidi.Display();
     fileDialog_loadMidi.Display();
+    fileDialog_openMidi.Display();
     fileDialog_importMidi.Display();
     if (ImGui::IsAnyItemHovered() ||
         !fileDialog_loadMidi.focusCanvas ||
         !fileDialog_saveMidi.focusCanvas ||
+        !fileDialog_openMidi.focusCanvas ||
         !fileDialog_importMidi.focusCanvas) {
         focusCanvas = false;
     }
@@ -626,6 +662,11 @@ void renderContext::trackMapBuffer_save() {
         saveMidiFile();
     }
 }
+void renderContext::openMidiDialog() {
+    fileDialog_openMidi.SetTypeFilters({".mid"});
+    fileDialog_openMidi.SetPwd("./");
+    fileDialog_openMidi.Open();
+}
 void renderContext::loadMidiDialog() {
     fileDialog_loadMidi.SetTypeFilters({".mid"});
     fileDialog_loadMidi.SetPwd("./");
@@ -641,16 +682,19 @@ void renderContext::loadMidiFile(const std::string& path) {
     if (drawing == nullptr) {
         return;
     }
-    drawing->midiFilePath = path;
-    drawing->needUpdateWindowTitle = true;
+    drawing->setMidiFilePath(path);
     drawing->loadMidi(path);
+}
+void renderContext::openMidiFile(const std::string& path) {
+    auto w = std::get<1>(createWindow());
+    w->setMidiFilePath(path);
+    w->loadMidi(path);
 }
 void renderContext::saveMidiFile(const std::string& path) {
     if (drawing == nullptr) {
         return;
     }
-    drawing->midiFilePath = path;
-    drawing->needUpdateWindowTitle = true;
+    drawing->setMidiFilePath(path);
     std::map<std::string, int> tn = drawing->trackNameMapper;
     std::map<int, int> ti = drawing->trackInsMapper;
     if (!drawing->checkTrackMapper(tn, ti)) {

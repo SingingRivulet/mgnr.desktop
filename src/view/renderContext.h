@@ -23,7 +23,7 @@ struct renderContext {
 
     std::map<int, std::unique_ptr<editWindow>> editWindows;
     int windows_current_id = 0;
-    int createWindow();
+    std::tuple<int, editWindow*> createWindow();
     void closeWindow(int id);
     void showWindow(editWindow*);
     void showWindow(int id);
@@ -97,12 +97,15 @@ struct renderContext {
     void trackMapBuffer_save();
 
     ImGui::FileBrowser fileDialog_loadMidi;
+    ImGui::FileBrowser fileDialog_openMidi;
     ImGui::FileBrowser fileDialog_saveMidi;
     ImGui::FileBrowser fileDialog_importMidi;
 
     void loadMidiDialog();
     void saveMidiDialog();
+    void openMidiDialog();
     void loadMidiFile(const std::string& path);
+    void openMidiFile(const std::string& path);
     void saveMidiFile(const std::string& path);
     void saveMidiFile();
 

@@ -121,6 +121,15 @@ void renderContext::draw() {
     ui_loop();
 
     SDL_RenderClear(renderer);
+
+    SDL_Rect rect;
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = windowWidth;
+    rect.h = windowHeight;
+    SDL_SetRenderDrawColor(renderer, 0, 0, 30, SDL_ALPHA_OPAQUE);
+    SDL_RenderFillRect(renderer, &rect);
+
     if (drawing) {
         drawing->draw();
     }
@@ -162,14 +171,15 @@ SDL_Texture* renderContext::getText(const std::string& str,
     return tex;
 }
 
-int renderContext::createWindow() {
+std::tuple<int, editWindow*> renderContext::createWindow() {
     std::unique_ptr<editWindow> p(new editWindow(this));
     if (drawing == nullptr) {
         showWindow(p.get());
     }
     int id = ++windows_current_id;
+    auto ptr = p.get();
     editWindows[id] = std::move(p);
-    return id;
+    return std::make_tuple(id, ptr);
 }
 void renderContext::closeWindow(int id) {
     auto it = editWindows.find(id);
