@@ -21,11 +21,12 @@ void renderContext::ui_shutdown() {
 }
 
 void renderContext::ui_loop() {
-    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     if (ImGui::Begin("播放控制", nullptr,
-                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar)) {
-        checkfocus();
-
+                     ImGuiWindowFlags_NoResize |
+                         ImGuiWindowFlags_NoTitleBar |
+                         ImGuiWindowFlags_MenuBar |
+                         ImGuiWindowFlags_NoBringToFrontOnFocus)) {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("文件")) {
                 if (drawing) {
@@ -65,7 +66,7 @@ void renderContext::ui_loop() {
             }
             ImGui::EndMenuBar();
         }
-        if (drawing) {
+        if (drawing) {  //midi界面相关操作
             if (ImGui::Button("开头")) {
                 drawing->lookAtX = 0;
             }
@@ -86,25 +87,15 @@ void renderContext::ui_loop() {
             if (ImGui::Button("结尾")) {
                 drawing->lookAtX = drawing->noteTimeMax;
             }
-        }
 
-        if (fileDialog_loadMidi.HasSelected()) {
-            loadMidiFile(fileDialog_loadMidi.GetSelected().string());
-            fileDialog_loadMidi.ClearSelected();
-        }
-        if (fileDialog_saveMidi.HasSelected()) {
-            printf("mgenner:save:%s\n", fileDialog_saveMidi.GetSelected().string().c_str());
-            saveMidiFile(fileDialog_saveMidi.GetSelected().string());
-            fileDialog_saveMidi.ClearSelected();
-        }
-
-        if (drawing) {
+            ImGui::SameLine();
             if (ImGui::Checkbox("编辑模式", &drawing->show_edit_window)) {
                 if (drawing->show_edit_window) {
                     drawing->show_trackSelect_window = true;
                 }
             }
 
+            ImGui::SameLine();
             if (ImGui::Checkbox("聚焦音轨", &focus_note)) {
                 drawing->clearSelected();
                 if (focus_note) {
@@ -119,179 +110,190 @@ void renderContext::ui_loop() {
             }
         }
 
-        ImGui::End();
+        if (fileDialog_loadMidi.HasSelected()) {
+            loadMidiFile(fileDialog_loadMidi.GetSelected().string());
+            fileDialog_loadMidi.ClearSelected();
+        }
+        if (fileDialog_saveMidi.HasSelected()) {
+            printf("mgenner:save:%s\n", fileDialog_saveMidi.GetSelected().string().c_str());
+            saveMidiFile(fileDialog_saveMidi.GetSelected().string());
+            fileDialog_saveMidi.ClearSelected();
+        }
     }
+    menuHeight = ImGui::CalcWindowNextAutoFitSize(ImGui::GetCurrentWindow()).y;
+    ImGui::SetWindowSize(ImVec2(windowWidth, menuHeight));
+    checkfocus();
+    ImGui::End();
+
     if (drawing) {
         if (drawing->show_edit_window) {
             ImGui::SetNextWindowPos(ImVec2(windowWidth - 420, 0), ImGuiCond_FirstUseEver);
-            ImGui::Begin("编辑", &drawing->show_edit_window, ImGuiWindowFlags_AlwaysAutoResize);
-            checkfocus();
-
-            {
-                if (ImGui::Button("撤销")) {
-                    drawing->undo();
-                }
-                if (ImGui::IsItemHovered()) {
-                    ImGui::SetTooltip("ctrl+z");
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("重做")) {
-                    drawing->redo();
-                }
-                if (ImGui::IsItemHovered()) {
-                    ImGui::SetTooltip("ctrl+shift+z");
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("粘贴")) {
-                    drawing->pasteMode = true;
-                    selectByBox = false;
-                }
-                if (ImGui::IsItemHovered()) {
-                    ImGui::SetTooltip("ctrl+v");
-                }
-
-                if (ImGui::Button("删除音符")) {
-                    drawing->removeSelected();
-                }
-                if (ImGui::IsItemHovered()) {
-                    ImGui::SetTooltip("back/delete");
-                }
-                ImGui::SameLine();
-                if (selectByBox) {
-                    if (ImGui::Button("取消框选")) {
+            if (ImGui::Begin("编辑", &drawing->show_edit_window, ImGuiWindowFlags_AlwaysAutoResize)) {
+                {
+                    if (ImGui::Button("撤销")) {
+                        drawing->undo();
+                    }
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("ctrl+z");
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("重做")) {
+                        drawing->redo();
+                    }
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("ctrl+shift+z");
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("粘贴")) {
+                        drawing->pasteMode = true;
                         selectByBox = false;
                     }
-                } else {
-                    if (ImGui::Button("框选模式")) {
-                        selectByBox = true;
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("ctrl+v");
+                    }
+
+                    if (ImGui::Button("删除音符")) {
+                        drawing->removeSelected();
+                    }
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("back/delete");
+                    }
+                    ImGui::SameLine();
+                    if (selectByBox) {
+                        if (ImGui::Button("取消框选")) {
+                            selectByBox = false;
+                        }
+                    } else {
+                        if (ImGui::Button("框选模式")) {
+                            selectByBox = true;
+                        }
+                    }
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("s键");
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("清除选择")) {
+                        drawing->clearSelected();
+                    }
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("鼠标右键");
+                    }
+                }
+
+                if (ImGui::InputInt("TPQ", &drawing->TPQ)) {
+                    if (drawing->TPQ > 4096) {
+                        drawing->TPQ = 4096;
+                    }
+                    if (drawing->TPQ < 1) {
+                        drawing->TPQ = 1;
                     }
                 }
                 if (ImGui::IsItemHovered()) {
-                    ImGui::SetTooltip("s键");
+                    ImGui::SetTooltip("TPQ，即每四分音符的tick数");
                 }
-                ImGui::SameLine();
-                if (ImGui::Button("清除选择")) {
-                    drawing->clearSelected();
+
+                if (ImGui::InputText("音轨命名", drawing->defaultInfoBuffer, sizeof(drawing->defaultInfoBuffer))) {
+                    if (strlen(drawing->defaultInfoBuffer) <= 1) {
+                    } else {
+                        drawing->setInfo(drawing->defaultInfoBuffer);
+                        drawing->show_trackSelect_window = true;
+                    }
                 }
                 if (ImGui::IsItemHovered()) {
-                    ImGui::SetTooltip("鼠标右键");
+                    if (!drawing->selected.empty()) {
+                        ImGui::SetTooltip(
+                            "改变音轨命名将同时改变所有已选中的音符\n"
+                            "\n"
+                            "音轨名与所使用的乐器相关联，当编辑对象\n"
+                            "为midi时(默认为此格式)，格式为\n"
+                            "“乐器名.轨道号”，例如“Piano.0”\n"
+                            "编辑其他类型数据时，请参考对应的文档。");
+                    } else {
+                        ImGui::SetTooltip(
+                            "音轨名与所使用的乐器相关联，当编辑对象\n"
+                            "为midi时(默认为此格式)，格式为\n"
+                            "“乐器名.轨道号”，例如“Piano.0”\n"
+                            "编辑其他类型数据时，请参考对应的文档。");
+                    }
                 }
-            }
 
-            if (ImGui::InputInt("TPQ", &drawing->TPQ)) {
-                if (drawing->TPQ > 4096) {
-                    drawing->TPQ = 4096;
+                if (ImGui::SliderInt("响度", &drawing->defaultVolume, 1, 127)) {
+                    for (auto& it : this->drawing->selected) {
+                        it->volume = drawing->defaultVolume;
+                    }
                 }
-                if (drawing->TPQ < 1) {
-                    drawing->TPQ = 1;
+                if (ImGui::IsItemHovered() && !drawing->selected.empty()) {
+                    ImGui::SetTooltip("改变响度将同时改变所有已选中的音符");
                 }
-            }
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("TPQ，即每四分音符的tick数");
-            }
 
-            if (ImGui::InputText("音轨命名", drawing->defaultInfoBuffer, sizeof(drawing->defaultInfoBuffer))) {
-                if (strlen(drawing->defaultInfoBuffer) <= 1) {
-                } else {
-                    drawing->setInfo(drawing->defaultInfoBuffer);
-                    drawing->show_trackSelect_window = true;
+                int sec = drawing->section;
+                if (ImGui::InputInt("节奏", &sec)) {
+                    drawing->setSection(sec);
                 }
-            }
-            if (ImGui::IsItemHovered()) {
-                if (!drawing->selected.empty()) {
-                    ImGui::SetTooltip(
-                        "改变音轨命名将同时改变所有已选中的音符\n"
-                        "\n"
-                        "音轨名与所使用的乐器相关联，当编辑对象\n"
-                        "为midi时(默认为此格式)，格式为\n"
-                        "“乐器名.轨道号”，例如“Piano.0”\n"
-                        "编辑其他类型数据时，请参考对应的文档。");
-                } else {
-                    ImGui::SetTooltip(
-                        "音轨名与所使用的乐器相关联，当编辑对象\n"
-                        "为midi时(默认为此格式)，格式为\n"
-                        "“乐器名.轨道号”，例如“Piano.0”\n"
-                        "编辑其他类型数据时，请参考对应的文档。");
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("以四分音符为一拍，每小节%d拍", drawing->section);
                 }
-            }
 
-            if (ImGui::SliderInt("响度", &drawing->defaultVolume, 1, 127)) {
-                for (auto& it : this->drawing->selected) {
-                    it->volume = drawing->defaultVolume;
+                const static char* noteWidth_items[] = {"1/32", "1/16", "1/8 ", "1/4 ", "1/2 ", "4/3 ", " 1  "};
+                const static float noteWidth_items_lens[] = {1.0 / 8.0, 1.0 / 4.0, 1 / 2.0, 1.0, 2.0, 3.0, 4.0};
+                ImGui::Text("音符长度");
+                ImGui::SameLine();
+                float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+                if (ImGui::ArrowButton("##left", ImGuiDir_Left)) {
+                    drawing->noteWidth_items_id--;
+                    if (drawing->noteWidth_items_id < 0) {
+                        drawing->noteWidth_items_id = 0;
+                    }
+                    drawing->noteWidth = noteWidth_items_lens[drawing->noteWidth_items_id];
+                    drawing->rebuildNoteLen();
+                }
+                ImGui::SameLine(0.0f, spacing);
+                ImGui::Text("%s", noteWidth_items[drawing->noteWidth_items_id]);
+                ImGui::SameLine(0.0f, spacing);
+                if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {
+                    drawing->noteWidth_items_id++;
+                    if (drawing->noteWidth_items_id > 6) {
+                        drawing->noteWidth_items_id = 6;
+                    }
+                    drawing->noteWidth = noteWidth_items_lens[drawing->noteWidth_items_id];
+                    drawing->rebuildNoteLen();
                 }
             }
-            if (ImGui::IsItemHovered() && !drawing->selected.empty()) {
-                ImGui::SetTooltip("改变响度将同时改变所有已选中的音符");
-            }
-
-            int sec = drawing->section;
-            if (ImGui::InputInt("节奏", &sec)) {
-                drawing->setSection(sec);
-            }
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("以四分音符为一拍，每小节%d拍", drawing->section);
-            }
-
-            const static char* noteWidth_items[] = {"1/32", "1/16", "1/8 ", "1/4 ", "1/2 ", "4/3 ", " 1  "};
-            const static float noteWidth_items_lens[] = {1.0 / 8.0, 1.0 / 4.0, 1 / 2.0, 1.0, 2.0, 3.0, 4.0};
-            ImGui::Text("音符长度");
-            ImGui::SameLine();
-            float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
-            if (ImGui::ArrowButton("##left", ImGuiDir_Left)) {
-                drawing->noteWidth_items_id--;
-                if (drawing->noteWidth_items_id < 0) {
-                    drawing->noteWidth_items_id = 0;
-                }
-                drawing->noteWidth = noteWidth_items_lens[drawing->noteWidth_items_id];
-                drawing->rebuildNoteLen();
-            }
-            ImGui::SameLine(0.0f, spacing);
-            ImGui::Text("%s", noteWidth_items[drawing->noteWidth_items_id]);
-            ImGui::SameLine(0.0f, spacing);
-            if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {
-                drawing->noteWidth_items_id++;
-                if (drawing->noteWidth_items_id > 6) {
-                    drawing->noteWidth_items_id = 6;
-                }
-                drawing->noteWidth = noteWidth_items_lens[drawing->noteWidth_items_id];
-                drawing->rebuildNoteLen();
-            }
-
+            checkfocus();
             ImGui::End();
         }
         if (drawing->show_trackSelect_window) {
             ImGui::SetNextWindowPos(ImVec2(windowWidth - 300, 260), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(300, windowHeight - 260), ImGuiCond_FirstUseEver);
-            ImGui::Begin("选择音轨", &drawing->show_trackSelect_window);
+            if (ImGui::Begin("选择音轨", &drawing->show_trackSelect_window)) {
+                constexpr char editTractContent[] =
+                    "编辑状态下更换音轨会同时将所有已选\n"
+                    "的音符设置为此音轨。\n"
+                    "如无须此操作，请先取消选中所有音符\n"
+                    "（在midi界面上单击鼠标右键）";
+
+                if (ImGui::CollapsingHeader("用户音轨", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    for (auto& it : drawing->strPool.indexer) {
+                        if (ImGui::Selectable(it.first.c_str(), it.first == drawing->defaultInfo.value())) {
+                            drawing->setInfo(it.first);
+                        }
+                        if (ImGui::IsItemHovered() && drawing->show_edit_window && !drawing->selected.empty()) {
+                            ImGui::SetTooltip(editTractContent);
+                        }
+                    }
+                }
+                if (ImGui::CollapsingHeader("系统乐器")) {
+                    for (int i = 0; i < 128; ++i) {
+                        if (ImGui::Selectable(mgnr::instrumentName[i], false)) {
+                            drawing->setInfo(mgnr::instrumentName[i]);
+                        }
+                        if (ImGui::IsItemHovered() && drawing->show_edit_window && !drawing->selected.empty()) {
+                            ImGui::SetTooltip(editTractContent);
+                        }
+                    }
+                }
+            }
             checkfocus();
-
-            constexpr char editTractContent[] =
-                "编辑状态下更换音轨会同时将所有已选\n"
-                "的音符设置为此音轨。\n"
-                "如无须此操作，请先取消选中所有音符\n"
-                "（在midi界面上单击鼠标右键）";
-
-            if (ImGui::CollapsingHeader("用户音轨", ImGuiTreeNodeFlags_DefaultOpen)) {
-                for (auto& it : drawing->strPool.indexer) {
-                    if (ImGui::Selectable(it.first.c_str(), it.first == drawing->defaultInfo.value())) {
-                        drawing->setInfo(it.first);
-                    }
-                    if (ImGui::IsItemHovered() && drawing->show_edit_window && !drawing->selected.empty()) {
-                        ImGui::SetTooltip(editTractContent);
-                    }
-                }
-            }
-            if (ImGui::CollapsingHeader("系统乐器")) {
-                for (int i = 0; i < 128; ++i) {
-                    if (ImGui::Selectable(mgnr::instrumentName[i], false)) {
-                        drawing->setInfo(mgnr::instrumentName[i]);
-                    }
-                    if (ImGui::IsItemHovered() && drawing->show_edit_window && !drawing->selected.empty()) {
-                        ImGui::SetTooltip(editTractContent);
-                    }
-                }
-            }
-
             ImGui::End();
         }
         if (show_tempoSet_bar) {
@@ -299,51 +301,53 @@ void renderContext::ui_loop() {
                 ImVec2(show_tempoSet_bar_pos_x,
                        show_tempoSet_bar_pos_y - 40));
 
-            ImGui::Begin("设置速度", &show_tempoSet_bar,
-                         ImGuiWindowFlags_NoTitleBar |
-                             ImGuiWindowFlags_AlwaysAutoResize |
-                             ImGuiWindowFlags_NoMove |
-                             ImGuiWindowFlags_NoBringToFrontOnFocus);
+            if (ImGui::Begin("设置速度", &show_tempoSet_bar,
+                             ImGuiWindowFlags_NoTitleBar |
+                                 ImGuiWindowFlags_AlwaysAutoResize |
+                                 ImGuiWindowFlags_NoMove |
+                                 ImGuiWindowFlags_NoBringToFrontOnFocus)) {
+                if (!(ImGui::IsItemFocused() || ImGui::IsWindowFocused())) {
+                    show_tempoSet_bar = false;
+                }
+                if (ImGui::Selectable("设置速度")) {
+                    show_tempoSet_bar = false;
+                    show_tempoAdd_bar = true;
+                    auto p = drawing->screenToAbs(show_tempoSet_bar_pos_x,
+                                                  show_tempoSet_bar_pos_y);
+                    show_tempoAdd_bar_val = drawing->getTempo(p.X);
+                }
+                if (ImGui::Selectable("删除速度")) {
+                    show_tempoSet_bar = false;
+                    drawing->clickToRemoveTempo(show_tempoSet_bar_pos_x,
+                                                show_tempoSet_bar_pos_y);
+                }
+            }
             checkfocus();
-            if (!(ImGui::IsItemFocused() || ImGui::IsWindowFocused())) {
-                show_tempoSet_bar = false;
-            }
-            if (ImGui::Selectable("设置速度")) {
-                show_tempoSet_bar = false;
-                show_tempoAdd_bar = true;
-                auto p = drawing->screenToAbs(show_tempoSet_bar_pos_x,
-                                              show_tempoSet_bar_pos_y);
-                show_tempoAdd_bar_val = drawing->getTempo(p.X);
-            }
-            if (ImGui::Selectable("删除速度")) {
-                show_tempoSet_bar = false;
-                drawing->clickToRemoveTempo(show_tempoSet_bar_pos_x,
-                                            show_tempoSet_bar_pos_y);
-            }
             ImGui::End();
         }
         if (show_tempoAdd_bar) {
-            ImGui::Begin("设置速度", &show_tempoAdd_bar, ImGuiWindowFlags_AlwaysAutoResize);
-            checkfocus();
-            ImGui::InputInt("bpm", &show_tempoAdd_bar_val);
-            if (show_tempoAdd_bar_val < 1) {
-                show_tempoAdd_bar_val = 1;
-            }
-            if (show_tempoAdd_bar_val > 1024) {
-                show_tempoAdd_bar_val = 1024;
-            }
-            if (ImGui::Button("设置")) {
-                show_tempoAdd_bar = false;
-                if (show_tempoAdd_bar_val > 0) {
-                    if (drawing->addTempo(show_tempoSet_bar_pos_x, show_tempoAdd_bar_val)) {
-                        auto hisptr = std::make_shared<mgnr::history>();  //插入历史记录
-                        hisptr->method = mgnr::history::H_TEMPO_ADD;
-                        hisptr->tempo = show_tempoAdd_bar_val;
-                        hisptr->begin = show_tempoSet_bar_pos_x;
-                        drawing->pushHistory(hisptr);
+            if (ImGui::Begin("设置速度", &show_tempoAdd_bar, ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::InputInt("bpm", &show_tempoAdd_bar_val);
+                if (show_tempoAdd_bar_val < 1) {
+                    show_tempoAdd_bar_val = 1;
+                }
+                if (show_tempoAdd_bar_val > 1024) {
+                    show_tempoAdd_bar_val = 1024;
+                }
+                if (ImGui::Button("设置")) {
+                    show_tempoAdd_bar = false;
+                    if (show_tempoAdd_bar_val > 0) {
+                        if (drawing->addTempo(show_tempoSet_bar_pos_x, show_tempoAdd_bar_val)) {
+                            auto hisptr = std::make_shared<mgnr::history>();  //插入历史记录
+                            hisptr->method = mgnr::history::H_TEMPO_ADD;
+                            hisptr->tempo = show_tempoAdd_bar_val;
+                            hisptr->begin = show_tempoSet_bar_pos_x;
+                            drawing->pushHistory(hisptr);
+                        }
                     }
                 }
             }
+            checkfocus();
             ImGui::End();
         }
         if (show_midiDescription_bar) {
@@ -351,223 +355,225 @@ void renderContext::ui_loop() {
                 ImVec2(show_midiDescription_bar_pos_x,
                        show_midiDescription_bar_pos_y));
 
-            ImGui::Begin("设置文本", &show_midiDescription_bar,
-                         ImGuiWindowFlags_NoTitleBar |
-                             ImGuiWindowFlags_AlwaysAutoResize |
-                             ImGuiWindowFlags_NoMove |
-                             ImGuiWindowFlags_NoBringToFrontOnFocus);
+            if (ImGui::Begin("设置文本", &show_midiDescription_bar,
+                             ImGuiWindowFlags_NoTitleBar |
+                                 ImGuiWindowFlags_AlwaysAutoResize |
+                                 ImGuiWindowFlags_NoMove |
+                                 ImGuiWindowFlags_NoBringToFrontOnFocus)) {
+                if (!(ImGui::IsItemFocused() || ImGui::IsWindowFocused())) {
+                    show_midiDescription_bar = false;
+                }
+                if (ImGui::Selectable("添加文本")) {
+                    show_midiDescription_bar = false;
+                    drawing->clickToAddDescription(
+                        show_midiDescription_bar_pos_x,
+                        show_midiDescription_bar_pos_y,
+                        [&](int tick) {
+                            show_descriptionAdd_bar = true;
+                            bzero(midiDescriptionBuffer_content,
+                                  sizeof(midiDescriptionBuffer_content));
+                            midiDescriptionBuffer_title = drawing->defaultInfo.value();
+                            midiDescriptionBuffer_tick = tick;
+                        });
+                }
+                if (ImGui::Selectable("编辑文本")) {
+                    show_midiDescription_bar = false;
+                    drawing->clickToSetDescription(
+                        show_midiDescription_bar_pos_x,
+                        show_midiDescription_bar_pos_y,
+                        [&](int tick,
+                            const mgnr::stringPool::stringPtr& title,
+                            const std::string& content) {
+                            snprintf(midiDescriptionBuffer_content,
+                                     sizeof(midiDescriptionBuffer_content),
+                                     "%s", content.c_str());
+                            midiDescriptionBuffer_title = title.value();
+                            midiDescriptionBuffer_tick = tick;
+                            show_descriptionEdit_bar = true;
+                        });
+                }
+                if (ImGui::Selectable("删除文本")) {
+                    show_midiDescription_bar = false;
+                    drawing->clickToSetDescription(
+                        show_midiDescription_bar_pos_x,
+                        show_midiDescription_bar_pos_y,
+                        [&](int tick,
+                            const mgnr::stringPool::stringPtr& title,
+                            const std::string& content) {
+                            drawing->delDescription(title, tick);
+                        });
+                }
+            }
             checkfocus();
-            if (!(ImGui::IsItemFocused() || ImGui::IsWindowFocused())) {
-                show_midiDescription_bar = false;
-            }
-            if (ImGui::Selectable("添加文本")) {
-                show_midiDescription_bar = false;
-                drawing->clickToAddDescription(
-                    show_midiDescription_bar_pos_x,
-                    show_midiDescription_bar_pos_y,
-                    [&](int tick) {
-                        show_descriptionAdd_bar = true;
-                        bzero(midiDescriptionBuffer_content,
-                              sizeof(midiDescriptionBuffer_content));
-                        midiDescriptionBuffer_title = drawing->defaultInfo.value();
-                        midiDescriptionBuffer_tick = tick;
-                    });
-            }
-            if (ImGui::Selectable("编辑文本")) {
-                show_midiDescription_bar = false;
-                drawing->clickToSetDescription(
-                    show_midiDescription_bar_pos_x,
-                    show_midiDescription_bar_pos_y,
-                    [&](int tick,
-                        const mgnr::stringPool::stringPtr& title,
-                        const std::string& content) {
-                        snprintf(midiDescriptionBuffer_content,
-                                 sizeof(midiDescriptionBuffer_content),
-                                 "%s", content.c_str());
-                        midiDescriptionBuffer_title = title.value();
-                        midiDescriptionBuffer_tick = tick;
-                        show_descriptionEdit_bar = true;
-                    });
-            }
-            if (ImGui::Selectable("删除文本")) {
-                show_midiDescription_bar = false;
-                drawing->clickToSetDescription(
-                    show_midiDescription_bar_pos_x,
-                    show_midiDescription_bar_pos_y,
-                    [&](int tick,
-                        const mgnr::stringPool::stringPtr& title,
-                        const std::string& content) {
-                        drawing->delDescription(title, tick);
-                    });
-            }
             ImGui::End();
         }
         if (show_descriptionEdit_bar) {
-            ImGui::Begin("编辑文本",
-                         &show_descriptionEdit_bar,
-                         ImGuiWindowFlags_AlwaysAutoResize);
-            checkfocus();
-            ImGui::Text("音轨：%s", midiDescriptionBuffer_title.c_str());
-            ImGui::InputText("设置文本",
-                             midiDescriptionBuffer_content,
-                             sizeof(midiDescriptionBuffer_content));
-            if (ImGui::Button("保存")) {
-                show_descriptionEdit_bar = false;
-                drawing->addDescription(drawing->strPool.create(midiDescriptionBuffer_title),
-                                        midiDescriptionBuffer_tick,
-                                        midiDescriptionBuffer_content);
+            if (ImGui::Begin("编辑文本",
+                             &show_descriptionEdit_bar,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text("音轨：%s", midiDescriptionBuffer_title.c_str());
+                ImGui::InputText("设置文本",
+                                 midiDescriptionBuffer_content,
+                                 sizeof(midiDescriptionBuffer_content));
+                if (ImGui::Button("保存")) {
+                    show_descriptionEdit_bar = false;
+                    drawing->addDescription(drawing->strPool.create(midiDescriptionBuffer_title),
+                                            midiDescriptionBuffer_tick,
+                                            midiDescriptionBuffer_content);
+                }
             }
+            checkfocus();
             ImGui::End();
         }
         if (show_descriptionAdd_bar) {
-            ImGui::Begin("添加文本",
-                         &show_descriptionAdd_bar,
-                         ImGuiWindowFlags_AlwaysAutoResize);
-            checkfocus();
-            ImGui::Text("音轨：%s", midiDescriptionBuffer_title.c_str());
-            ImGui::InputText("设置文本",
-                             midiDescriptionBuffer_content,
-                             sizeof(midiDescriptionBuffer_content));
-            if (ImGui::Button("保存")) {
-                show_descriptionAdd_bar = false;
-                drawing->addDescription(drawing->strPool.create(midiDescriptionBuffer_title),
-                                        midiDescriptionBuffer_tick,
-                                        midiDescriptionBuffer_content);
+            if (ImGui::Begin("添加文本",
+                             &show_descriptionAdd_bar,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text("音轨：%s", midiDescriptionBuffer_title.c_str());
+                ImGui::InputText("设置文本",
+                                 midiDescriptionBuffer_content,
+                                 sizeof(midiDescriptionBuffer_content));
+                if (ImGui::Button("保存")) {
+                    show_descriptionAdd_bar = false;
+                    drawing->addDescription(drawing->strPool.create(midiDescriptionBuffer_title),
+                                            midiDescriptionBuffer_tick,
+                                            midiDescriptionBuffer_content);
+                }
             }
+            checkfocus();
             ImGui::End();
         }
 
         if (!drawing->selected.empty() && drawing->show_edit_window) {
             ImGui::SetNextWindowPos(ImVec2(windowWidth / 2, windowHeight / 2), ImGuiCond_FirstUseEver);
-            ImGui::Begin("编辑音符",
-                         nullptr,
-                         ImGuiWindowFlags_AlwaysAutoResize |
-                             ImGuiWindowFlags_NoFocusOnAppearing);
+            if (ImGui::Begin("编辑音符",
+                             nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize |
+                                 ImGuiWindowFlags_NoFocusOnAppearing)) {
+                ImGui::Text("改变时长");
+                ImGui::SameLine();
+                if (ImGui::Button("-")) {
+                    drawing->resizeSelected(-1);
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("+")) {
+                    drawing->resizeSelected(1);
+                }
+
+                if (ImGui::Button("复制")) {
+                    drawing->copy();
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("ctrl+c");
+                }
+            }
             checkfocus();
-
-            ImGui::Text("改变时长");
-            ImGui::SameLine();
-            if (ImGui::Button("-")) {
-                drawing->resizeSelected(-1);
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("+")) {
-                drawing->resizeSelected(1);
-            }
-
-            if (ImGui::Button("复制")) {
-                drawing->copy();
-            }
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("ctrl+c");
-            }
-
             ImGui::End();
         }
         if (show_trackMap_window) {
             ImGui::SetNextWindowSize(ImVec2(615, 478), ImGuiCond_FirstUseEver);
-            ImGui::Begin("音轨映射表", &show_trackMap_window);
-            checkfocus();
-            bool selectIns = false;
-            bool setTrack = false;
-            int setTrack_id;
-            int setTrack_ins;
-            if (trackMapBuffer_closeWithSave) {
-                ImGui::TextWrapped(
-                    "如保存midi时弹出此窗口，"
-                    "表明有部分音轨未分配midi轨道，"
-                    "系统将自动分配，请确认后再保存");
-            }
-            ImGui::TextWrapped("此表设置的是输出的midi文件中的轨道关系，和播放时的乐器无关");
-            ImGui::TextUnformatted("");
-            if (ImGui::BeginTable("音轨映射表", 3)) {
-                ImGui::TableNextColumn();
-                ImGui::Text("音轨名称");
-                ImGui::TableNextColumn();
-                ImGui::Text("音轨");
-                ImGui::TableNextColumn();
-                ImGui::Text("乐器");
-                char buf[256];
-                int index = 1;
-                for (auto& it : trackMapBuffer) {
-                    ImGui::TableNextRow();
+            if (ImGui::Begin("音轨映射表", &show_trackMap_window)) {
+                bool selectIns = false;
+                bool setTrack = false;
+                int setTrack_id;
+                int setTrack_ins;
+                if (trackMapBuffer_closeWithSave) {
+                    ImGui::TextWrapped(
+                        "如保存midi时弹出此窗口，"
+                        "表明有部分音轨未分配midi轨道，"
+                        "系统将自动分配，请确认后再保存");
+                }
+                ImGui::TextWrapped("此表设置的是输出的midi文件中的轨道关系，和播放时的乐器无关");
+                ImGui::TextUnformatted("");
+                if (ImGui::BeginTable("音轨映射表", 3)) {
                     ImGui::TableNextColumn();
-                    ImGui::Text("%s", std::get<0>(it).c_str());
+                    ImGui::Text("音轨名称");
                     ImGui::TableNextColumn();
-                    int n = std::get<1>(it);
-                    snprintf(buf, sizeof(buf), "音轨%d", index);
-                    if (ImGui::InputInt(buf, &std::get<1>(it))) {
-                        if (std::get<1>(it) < 0) {
-                            std::get<1>(it) = 0;
+                    ImGui::Text("音轨");
+                    ImGui::TableNextColumn();
+                    ImGui::Text("乐器");
+                    char buf[256];
+                    int index = 1;
+                    for (auto& it : trackMapBuffer) {
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%s", std::get<0>(it).c_str());
+                        ImGui::TableNextColumn();
+                        int n = std::get<1>(it);
+                        snprintf(buf, sizeof(buf), "音轨%d", index);
+                        if (ImGui::InputInt(buf, &std::get<1>(it))) {
+                            if (std::get<1>(it) < 0) {
+                                std::get<1>(it) = 0;
+                            }
+                            if (std::get<1>(it) > 1024) {
+                                std::get<1>(it) = 1024;
+                            }
+                            if (n != std::get<1>(it)) {
+                                setTrack = true;
+                                setTrack_id = std::get<1>(it);
+                                setTrack_ins = std::get<2>(it);
+                            }
                         }
-                        if (std::get<1>(it) > 1024) {
-                            std::get<1>(it) = 1024;
+                        ImGui::TableNextColumn();
+                        n = std::get<2>(it);
+                        snprintf(buf, sizeof(buf), "设置乐器%d", index);
+
+                        if (ImGui::Button(buf)) {
+                            selectIns = true;
+                            trackMapBuffer_setInstrument_track = std::get<1>(it);
+                            trackMapBuffer_setInstrument_ins = std::get<2>(it);
                         }
-                        if (n != std::get<1>(it)) {
+
+                        ImGui::SameLine();
+                        if (std::get<2>(it) < 0) {
+                            std::get<2>(it) = 0;
+                        }
+                        if (std::get<2>(it) > 127) {
+                            std::get<2>(it) = 127;
+                        }
+                        ImGui::TextUnformatted(mgnr::instrumentName[std::get<2>(it)]);
+                        ++index;
+                    }
+                    ImGui::EndTable();
+                }
+                if (selectIns) {
+                    ImGui::OpenPopup("selectInstrument");
+                }
+                if (ImGui::BeginPopup("selectInstrument")) {
+                    checkfocus();
+                    ImGui::Text("选择乐器");
+                    ImGui::Separator();
+                    for (int i = 0; i < 128; ++i) {
+                        if (ImGui::Selectable(mgnr::instrumentName[i],
+                                              trackMapBuffer_setInstrument_ins == i)) {
                             setTrack = true;
-                            setTrack_id = std::get<1>(it);
-                            setTrack_ins = std::get<2>(it);
+                            setTrack_id = trackMapBuffer_setInstrument_track;
+                            setTrack_ins = i;
                         }
                     }
-                    ImGui::TableNextColumn();
-                    n = std::get<2>(it);
-                    snprintf(buf, sizeof(buf), "设置乐器%d", index);
-
-                    if (ImGui::Button(buf)) {
-                        selectIns = true;
-                        trackMapBuffer_setInstrument_track = std::get<1>(it);
-                        trackMapBuffer_setInstrument_ins = std::get<2>(it);
-                    }
-
-                    ImGui::SameLine();
-                    if (std::get<2>(it) < 0) {
-                        std::get<2>(it) = 0;
-                    }
-                    if (std::get<2>(it) > 127) {
-                        std::get<2>(it) = 127;
-                    }
-                    ImGui::TextUnformatted(mgnr::instrumentName[std::get<2>(it)]);
-                    ++index;
+                    ImGui::EndPopup();
                 }
-                ImGui::EndTable();
-            }
-            if (selectIns) {
-                ImGui::OpenPopup("selectInstrument");
-            }
-            if (ImGui::BeginPopup("selectInstrument")) {
-                checkfocus();
-                ImGui::Text("选择乐器");
-                ImGui::Separator();
-                for (int i = 0; i < 128; ++i) {
-                    if (ImGui::Selectable(mgnr::instrumentName[i],
-                                          trackMapBuffer_setInstrument_ins == i)) {
-                        setTrack = true;
-                        setTrack_id = trackMapBuffer_setInstrument_track;
-                        setTrack_ins = i;
+                if (setTrack) {
+                    for (auto& it : trackMapBuffer) {
+                        if (std::get<1>(it) == setTrack_id) {
+                            std::get<2>(it) = setTrack_ins;
+                        }
                     }
                 }
-                ImGui::EndPopup();
-            }
-            if (setTrack) {
-                for (auto& it : trackMapBuffer) {
-                    if (std::get<1>(it) == setTrack_id) {
-                        std::get<2>(it) = setTrack_ins;
-                    }
+
+                if (ImGui::Button("保存")) {
+                    show_trackMap_window = false;
+                    trackMapBuffer_save();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("复位")) {
+                    std::map<std::string, int> tn;
+                    std::map<int, int> ti;
+                    drawing->checkTrackMapper(tn, ti);
+                    trackMapBuffer_init(tn, ti);
                 }
             }
-
-            if (ImGui::Button("保存")) {
-                show_trackMap_window = false;
-                trackMapBuffer_save();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("复位")) {
-                std::map<std::string, int> tn;
-                std::map<int, int> ti;
-                drawing->checkTrackMapper(tn, ti);
-                trackMapBuffer_init(tn, ti);
-            }
-
+            checkfocus();
             ImGui::End();
         }
     }

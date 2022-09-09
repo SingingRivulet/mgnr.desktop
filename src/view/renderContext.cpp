@@ -110,7 +110,9 @@ void renderContext::draw() {
     if (drawing) {
         drawing->windowHeight = windowHeight;
         drawing->windowWidth = windowWidth;
-        drawing->buildScroll();
+    }
+    for (auto& it : editWindows) {
+        it.second->buildScroll();
     }
     this->module_loop();
     ImGui_ImplSDLRenderer_NewFrame();
@@ -128,8 +130,8 @@ void renderContext::draw() {
 }
 
 void renderContext::playStep() {
-    if (drawing) {
-        drawing->playStep();
+    for (auto& it : editWindows) {
+        it.second->playStep();
     }
 }
 

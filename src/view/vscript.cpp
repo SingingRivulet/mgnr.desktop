@@ -11,7 +11,6 @@ void renderContext::module_nodeEditor() {
         ImGui::SetNextWindowPos(ImVec2(847 + 9, 55), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(387, 560), ImGuiCond_FirstUseEver);
         if (ImGui::Begin("节点输出")) {
-            checkfocus();
             ImGui::LogToClipboard();
             for (auto& it : scriptConsole) {
                 ImGui::TextWrapped("%s", it.c_str());
@@ -26,8 +25,9 @@ void renderContext::module_nodeEditor() {
                 }
                 ImGui::EndPopup();
             }
-            ImGui::End();
         }
+        checkfocus();
+        ImGui::End();
     }
 }
 //文件选择节点

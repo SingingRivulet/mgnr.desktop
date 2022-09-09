@@ -7,19 +7,6 @@ void node_ui::draw() {
 void script_ui::draw(bool* showing) {
     focused = false;
     if (ImGui::Begin(title.c_str(), showing)) {
-        auto wpos_min = ImGui::GetWindowPos();
-        auto wpos_max = ImVec2(
-            wpos_min.x + ImGui::GetWindowWidth(),
-            wpos_min.y + ImGui::GetWindowHeight());
-        if (ImGui::IsItemFocused() ||
-            ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) ||
-            ImGui::IsWindowHovered(ImGuiFocusedFlags_RootAndChildWindows)) {
-            focused = true;
-        }
-        if (ImGui::IsMouseHoveringRect(wpos_min, wpos_max)) {
-            focused = true;
-        }
-
         ImNodes::BeginNodeEditor();
 
         //添加节点
@@ -164,9 +151,20 @@ void script_ui::draw(bool* showing) {
                 delLink(link_id);
             }
         }
-
-        ImGui::End();
     }
+    auto wpos_min = ImGui::GetWindowPos();
+    auto wpos_max = ImVec2(
+        wpos_min.x + ImGui::GetWindowWidth(),
+        wpos_min.y + ImGui::GetWindowHeight());
+    if (ImGui::IsItemFocused() ||
+        ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) ||
+        ImGui::IsWindowHovered(ImGuiFocusedFlags_RootAndChildWindows)) {
+        focused = true;
+    }
+    if (ImGui::IsMouseHoveringRect(wpos_min, wpos_max)) {
+        focused = true;
+    }
+    ImGui::End();
 }
 
 }  // namespace mgnr::vscript

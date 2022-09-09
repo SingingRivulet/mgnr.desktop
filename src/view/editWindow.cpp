@@ -245,17 +245,18 @@ void editWindow::drawDescriptions(float p, const mgnr::stringPool::stringPtr& ti
     rect.x = p;
     rect.y = 0;
     rect.w = 1;
-    rect.h = windowHeight - 90;
+    rect.h = windowHeight - 60;
     SDL_Texture* tex;
     SDL_Color textColor = {64, 128, 128};
     //分割线
     SDL_SetRenderDrawColor(parent->renderer, 64, 128, 128, SDL_ALPHA_OPAQUE);
     SDL_RenderFillRect(parent->renderer, &rect);
+    rect.y = parent->menuHeight;
     //标题
     tex = parent->getText(title.value(), textColor, rect);
     SDL_RenderCopy(parent->renderer, tex, NULL, &rect);
     //内容
-    rect.y = 20;
+    rect.y = parent->menuHeight + 20;
     tex = parent->getText(content, textColor, rect);
     SDL_RenderCopy(parent->renderer, tex, NULL, &rect);
 }
@@ -265,7 +266,7 @@ void editWindow::drawDescriptionsPadd() {
     rect.x = 0;
     rect.y = 0;
     rect.w = windowWidth;
-    rect.h = 40;
+    rect.h = 40 + parent->menuHeight;
     SDL_SetRenderDrawColor(parent->renderer, 0, 0, 30, SDL_ALPHA_OPAQUE);
     SDL_RenderFillRect(parent->renderer, &rect);
 }

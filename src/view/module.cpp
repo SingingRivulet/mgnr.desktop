@@ -435,7 +435,6 @@ void renderContext::module_show() {
         bool showing = true;
         ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
         if (ImGui::Begin(it->name.c_str(), &showing)) {
-            checkfocus();
             if (it->drawUI >= 0) {
                 lua_rawgeti(lua_mainthread, LUA_REGISTRYINDEX, it->drawUI);
                 if (lua_isfunction(lua_mainthread, -1)) {
@@ -443,8 +442,9 @@ void renderContext::module_show() {
                 }
                 lua_settop(lua_mainthread, 0);
             }
-            ImGui::End();
         }
+        checkfocus();
+        ImGui::End();
         if (!showing) {
             rmlist.push_back(it);
         }

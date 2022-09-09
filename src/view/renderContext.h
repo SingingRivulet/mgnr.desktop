@@ -68,6 +68,8 @@ struct renderContext {
     //////////////////////////////////////////////////////////////////
     ///ui相关
 
+    int menuHeight = 0;
+
     bool show_tempoSet_bar = false;
     int show_tempoSet_bar_pos_x;
     int show_tempoSet_bar_pos_y;

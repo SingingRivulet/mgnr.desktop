@@ -7,8 +7,9 @@ void renderContext::processEvents() {
     for (auto& event : events) {
         if (event.type == SDL_MOUSEBUTTONDOWN) {  //按键
 
-            if (event.motion.y < 40 && SDL_BUTTON_RIGHT == event.button.button) {  //小于40是marker
-                if (drawing->show_edit_window &&
+            if (event.motion.y < 40 + menuHeight) {  //小于40+menuHeight是marker
+                if (SDL_BUTTON_RIGHT == event.button.button &&
+                    drawing->show_edit_window &&
                     !show_midiDescription_bar &&
                     !show_descriptionAdd_bar &&
                     !show_descriptionEdit_bar) {
