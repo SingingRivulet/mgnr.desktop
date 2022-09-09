@@ -39,6 +39,8 @@ add_executable(mgnr
     ./view/synth.cpp
     ./view/module.cpp
     ./view/vscript.cpp
+    ./view/renderContext.cpp
+    ./view/editWindow.cpp
 
     ./vscript/vscript.cpp
     ./vscript/vscript_ui.cpp

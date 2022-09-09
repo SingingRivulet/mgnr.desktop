@@ -1,6 +1,6 @@
 #include "mgenner.h"
 
-void mgenner::module_nodeEditor() {
+void renderContext::module_nodeEditor() {
     if (module_showNodeEditor) {
         ImGui::SetNextWindowPos(ImVec2(9, 55), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(847, 560), ImGuiCond_FirstUseEver);
@@ -32,9 +32,9 @@ void mgenner::module_nodeEditor() {
 }
 //文件选择节点
 struct node_getFile : public mgnr::vscript::node_ui {
-    mgenner* global;
+    renderContext* global;
     char module_importFilePath[512];
-    node_getFile(mgenner* global) {
+    node_getFile(renderContext* global) {
         this->global = global;
         bzero(module_importFilePath, sizeof(module_importFilePath));
         this->name = "加载文件";
@@ -87,8 +87,8 @@ struct node_getFile : public mgnr::vscript::node_ui {
 };
 //输出节点
 struct node_print : public mgnr::vscript::node_ui {
-    mgenner* global;
-    node_print(mgenner* global) {
+    renderContext* global;
+    node_print(renderContext* global) {
         this->global = global;
         this->name = "输出";
         std::unique_ptr<mgnr::vscript::port_input> in0(new mgnr::vscript::port_input);
@@ -109,7 +109,7 @@ struct node_print : public mgnr::vscript::node_ui {
     ~node_print() override {}
 };
 
-void mgenner::vscript_init() {
+void renderContext::vscript_init() {
     vscript.global = this;
     ImNodes::CreateContext();
     ImNodes::SetNodeGridSpacePos(1, ImVec2(200.0f, 200.0f));
@@ -132,12 +132,12 @@ void mgenner::vscript_init() {
             }));
 }
 
-void mgenner::vscript_t::addNodeAt(mgnr::vscript::port_output* p) {
+void renderContext::vscript_t::addNodeAt(mgnr::vscript::port_output* p) {
     addNodeMode = true;
     addNodeAtPort = p;
     addNodeAtPort_window_pos = ImVec2(global->mouse_x, global->mouse_y);
 }
-void mgenner::vscript_t::onAddNode() {
+void renderContext::vscript_t::onAddNode() {
     if (ImGui::BeginPopup("添加节点")) {
         global->checkfocus();
         for (auto& menu : scriptClass) {
@@ -219,6 +219,6 @@ void mgenner::vscript_t::onAddNode() {
     }
 }
 
-mgenner::vscript_t::vscript_t() {
+renderContext::vscript_t::vscript_t() {
     title = "节点控制台";
 }

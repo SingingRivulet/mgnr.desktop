@@ -1,9 +1,9 @@
 #include "lua_imgui.hpp"
-#include "mgenner.h"
+#include "renderContext.h"
 
 struct node_lua : public mgnr::vscript::node_ui {
-    mgenner* global;
-    mgenner::vclass_t* vclass;
+    renderContext* global;
+    renderContext::vclass_t* vclass;
     node_lua() {
     }
     void exec() override {
@@ -41,7 +41,7 @@ static int lua_registerModule(lua_State* L) {
     if (!lua_islightuserdata(L, 1)) {
         return 0;
     }
-    auto self = (mgenner*)lua_touserdata(L, 1);
+    auto self = (renderContext*)lua_touserdata(L, 1);
     if (self == nullptr) {
         return 0;
     }
@@ -58,7 +58,7 @@ static int lua_registerModule(lua_State* L) {
         if (!name.empty()) {
             printf("mgennerModule:load:%s\n", name.c_str());
 
-            auto p = new mgenner::moduleConfig;
+            auto p = new renderContext::moduleConfig;
             p->name = name;
 
             lua_pushstring(L, "init");
@@ -98,7 +98,7 @@ static int lua_registerModule(lua_State* L) {
             lua_pushstring(L, "vscript");
             lua_gettable(L, -2);
             if (lua_istable(L, -1)) {  //是模块
-                std::unique_ptr<mgenner::vclass_t> vclass_p(new mgenner::vclass_t);
+                std::unique_ptr<renderContext::vclass_t> vclass_p(new renderContext::vclass_t);
                 vclass_p->name = name;
                 lua_pushstring(L, "input");
                 lua_gettable(L, -2);
@@ -190,9 +190,9 @@ static int lua_registerModule(lua_State* L) {
                 auto vpp = vclass_p.get();
                 auto vclass_callback = std::tuple<
                     std::string,
-                    std::function<mgnr::vscript::node*(mgenner::vscript_t*)>>(
+                    std::function<mgnr::vscript::node*(renderContext::vscript_t*)>>(
                     vpp->name,
-                    [vpp, self](mgenner::vscript_t* s) {
+                    [vpp, self](renderContext::vscript_t* s) {
                         node_lua* nl = new node_lua;
                         nl->global = self;
                         nl->vclass = vpp;
@@ -343,7 +343,7 @@ static int lua_vscript_print(lua_State* L) {
     return 0;
 }
 
-void mgenner::loadConfig() {
+void renderContext::loadConfig() {
     lua_mainthread = luaL_newstate();
     luaL_openlibs(lua_mainthread);
     luaopen_imgui(lua_mainthread);
@@ -418,7 +418,7 @@ void mgenner::loadConfig() {
     vscript_init();
 }
 
-void mgenner::module_menu() {
+void renderContext::module_menu() {
     if (ImGui::MenuItem("节点控制台")) {
         module_showNodeEditor = true;
     }
@@ -429,7 +429,7 @@ void mgenner::module_menu() {
         }
     }
 }
-void mgenner::module_show() {
+void renderContext::module_show() {
     std::vector<moduleConfig*> rmlist;
     for (auto it : modules_showing) {
         bool showing = true;
@@ -455,7 +455,7 @@ void mgenner::module_show() {
 
     module_nodeEditor();
 }
-void mgenner::module_loop() {
+void renderContext::module_loop() {
     for (auto it : modules_loop) {
         if (it->loop >= 0) {
             lua_rawgeti(lua_mainthread, LUA_REGISTRYINDEX, it->loop);
@@ -475,7 +475,7 @@ void mgenner::module_loop() {
         }
     }
 }
-void mgenner::shutdownModules() {
+void renderContext::shutdownModules() {
     for (auto it : modules) {
         if (it->shutdown >= 0) {
             lua_rawgeti(lua_mainthread, LUA_REGISTRYINDEX, it->shutdown);

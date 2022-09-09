@@ -24,6 +24,7 @@ return {
             type = "字符串"
         }},
         output = {},
+        menu = "测试节点",
         exec = function(global, self)
             local i0 = vscript.getInput(self, 0)
             local i1 = vscript.getInput(self, 1)

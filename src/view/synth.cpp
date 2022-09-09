@@ -1,5 +1,5 @@
-#include "mgenner.h"
-void mgenner::synth_init() {
+#include "editWindow.h"
+void renderContext::synth_init() {
     settings = new_fluid_settings();
     if (settings == NULL) {
         puts("Failed to create the settings!");
@@ -34,20 +34,20 @@ void mgenner::synth_init() {
     }
 }
 
-void mgenner::synth_shutdown() {
+void renderContext::synth_shutdown() {
     delete_fluid_audio_driver(adriver);
     delete_fluid_synth(synth);
     delete_fluid_settings(settings);
 }
 
-void mgenner::onSetChannelIns(int c, int ins) {
-    fluid_synth_program_change(synth, c, ins);
+void editWindow::onSetChannelIns(int c, int ins) {
+    fluid_synth_program_change(parent->synth, c, ins);
 }
 
-void mgenner::callSynthNoteOn(const char* info, int channel, int tone, int vol) {
-    fluid_synth_noteon(synth, channel, tone, vol);
+void editWindow::callSynthNoteOn(const char* info, int channel, int tone, int vol) {
+    fluid_synth_noteon(parent->synth, channel, tone, vol);
 }
 
-void mgenner::callSynthNoteOff(const char* info, int channel, int tone) {
-    fluid_synth_noteoff(synth, channel, tone);
+void editWindow::callSynthNoteOff(const char* info, int channel, int tone) {
+    fluid_synth_noteoff(parent->synth, channel, tone);
 }
