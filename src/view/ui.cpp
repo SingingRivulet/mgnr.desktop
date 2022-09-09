@@ -146,10 +146,10 @@ void renderContext::ui_loop() {
                 if (p != drawing) {
                     showWindow(p);
                 }
-                if (!opened) {
-                    closeWindow(it.first);
-                }
                 ImGui::EndTabItem();
+            }
+            if (!opened) {
+                closeWindow(it.first);
             }
         }
         ImGui::EndTabBar();

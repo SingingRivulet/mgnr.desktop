@@ -11,6 +11,9 @@ editWindow::editWindow(renderContext* p) {
                                               SDL_TEXTUREACCESS_TARGET, 1024, 30);
 
     setSection(4);
+
+    windowWidth = p->windowWidth;
+    windowHeight = p->windowHeight;
 }
 editWindow::~editWindow() {
     if (scroll_texture) {
