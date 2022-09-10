@@ -60,7 +60,7 @@ bool midiMap::updateTimeMax() {
         noteToneMin = 255;
         noteToneMax = 0;
         for (auto& it : notes) {
-            float tm = it->begin + it->delay;
+            float tm = it->begin + it->duration;
             if (tm > noteTimeMax) {
                 noteTimeMax = tm;
             }
@@ -79,14 +79,14 @@ bool midiMap::updateTimeMax() {
     }
     return false;
 }
-note* midiMap::addNote(float position, float tone, float delay, int v, const stringPool::stringPtr& info, int id_set) {
+note* midiMap::addNote(float position, float tone, float duration, int v, const stringPool::stringPtr& info, int id_set) {
     onUseInfo(info);
 
     HBB::vec from;
     HBB::vec to;
     from.set(position, tone);
     to = from;
-    to.X += delay;
+    to.X += duration;
     to.Y += 0.9;
 
     auto p = ((npool*)pool)->get();
@@ -101,7 +101,7 @@ note* midiMap::addNote(float position, float tone, float delay, int v, const str
 
     p->begin = position;
     p->tone = tone;
-    p->delay = delay;
+    p->duration = duration;
     p->volume = v;
     p->info = info;
 
@@ -138,7 +138,7 @@ void midiMap::resizeNote(note* p) {
         HBB::vec to;
         from.set(p->begin, p->tone);
         to = from;
-        to.X += p->delay;
+        to.X += p->duration;
         to.Y += 0.9;
 
         timeIndex.erase(p->endIndex);
@@ -397,14 +397,14 @@ int midiMap::getAreaNote(float begin, float len, const std::string& info, float 
             }
             if (n->begin < self->begin) {
                 float delta = n->begin - self->begin;
-                float dur = n->delay + delta;
+                float dur = n->duration + delta;
                 if (dur >= 1) {
                     self->tones.push_back(std::make_tuple(n->begin - delta, dur, n->tone));
                     self->sum += dur;
                 }
             } else {
-                self->tones.push_back(std::make_tuple(n->begin, n->delay, n->tone));
-                self->sum += n->delay;
+                self->tones.push_back(std::make_tuple(n->begin, n->duration, n->tone));
+                self->sum += n->duration;
             }
         },
         &self);

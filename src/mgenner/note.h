@@ -34,7 +34,7 @@ namespace mgnr{
         public:
             float begin;
             float tone;
-            float delay;
+            float duration;
             int volume;
             int id;
             int startId;
@@ -58,7 +58,7 @@ namespace mgnr{
                 beginIndex = noteIndex(begin,startId);
             }
             inline void getEndIndex(){
-                endIndex = noteIndex(begin+delay,endId);
+                endIndex = noteIndex(begin+duration,endId);
             }
             
             void * indexer;

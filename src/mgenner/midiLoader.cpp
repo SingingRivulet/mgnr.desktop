@@ -319,7 +319,7 @@ void editTable::loadMidi(const std::string& str) {
 
             if (event_obj.isNoteOn() && event_obj.size() >= 3) {
                 int position = event_obj.tick;
-                int delay = event_obj.getTickDuration();
+                int duration = event_obj.getTickDuration();
                 int delayS = event_obj.getDurationInSeconds();
                 int tone = (int)event_obj[1];
                 int v = (int)event_obj[2];
@@ -328,7 +328,7 @@ void editTable::loadMidi(const std::string& str) {
                 trackInsMapper[track] = instrumentId;
                 trackNameMapper[infoBuf] = track;
 
-                addNote(position, tone, delay, v, strPool.create(infoBuf));
+                addNote(position, tone, duration, v, strPool.create(infoBuf));
                 iset.insert(instrumentId);
             } else if (event_obj.isTimbre()) {
                 instrumentId = event_obj.getP1();
@@ -426,7 +426,7 @@ std::string editTable::loadMidi_preprocess(const std::string& str, const std::st
     lua_setglobal(lua, "log_print");
 
     lua_pushcfunction(lua, [](lua_State* L) -> int {
-        //self, position, tone, delay, v,infoBuf
+        //self, position, tone, duration, v,infoBuf
         if (!lua_islightuserdata(L, 1)) {
             return 0;
         }
@@ -480,12 +480,12 @@ std::string editTable::loadMidi_preprocess(const std::string& str, const std::st
             auto& event_obj = track_obj[event];
             if (event_obj.isNoteOn() && event_obj.size() >= 3) {
                 int position = event_obj.tick;
-                int delay = event_obj.getTickDuration();
+                int duration = event_obj.getTickDuration();
                 double delayS = event_obj.getDurationInSeconds();
                 int tone = (int)event_obj[1];
                 int v = (int)event_obj[2];
                 snprintf(infoBuf, sizeof(infoBuf), "%s.%d", instrumentName[instrumentId], track);
-                //addNote(position, tone, delay, v,infoBuf);
+                //addNote(position, tone, duration, v,infoBuf);
 
                 lua_createtable(lua, 0, 0);
                 //创建lua数组
@@ -495,7 +495,7 @@ std::string editTable::loadMidi_preprocess(const std::string& str, const std::st
                 lua_settable(lua, -3);
 
                 lua_pushstring(lua, "duration");
-                lua_pushinteger(lua, delay);
+                lua_pushinteger(lua, duration);
                 lua_settable(lua, -3);
 
                 lua_pushstring(lua, "durationInSeconds");
@@ -584,7 +584,7 @@ std::string editTable::exportString() {
                 auto p2 = new noteMap_t;
                 p2->tone = it->tone;
                 p2->volume = 0;
-                p2->time = it->begin + it->delay;
+                p2->time = it->begin + it->duration;
                 p2->isNoteOn = false;
 
                 p1->instrument = getInstrumentId(it->info);
@@ -660,7 +660,7 @@ void editTable::exportMidi(const std::string& filename) {
                     auto p2 = new noteMap_t;
                     p2->tone = it->tone;
                     p2->volume = 0;
-                    p2->time = it->begin + it->delay;
+                    p2->time = it->begin + it->duration;
                     p2->isNoteOn = false;
                     p2->isMarker = false;
 
@@ -682,7 +682,7 @@ void editTable::exportMidi(const std::string& filename) {
                     auto p2 = new noteMap_t;
                     p2->tone = it->tone;
                     p2->volume = 0;
-                    p2->time = it->begin + it->delay;
+                    p2->time = it->begin + it->duration;
                     p2->isNoteOn = false;
                     p2->isMarker = false;
 
@@ -827,7 +827,7 @@ void editTable::exportMidiWithTrackMapper(const std::string& filename) {
                 auto p2 = new noteMap_t;
                 p2->tone = it->tone;
                 p2->volume = 0;
-                p2->time = it->begin + it->delay;
+                p2->time = it->begin + it->duration;
                 p2->isNoteOn = false;
                 p2->isMarker = false;
                 p2->ins = ins;

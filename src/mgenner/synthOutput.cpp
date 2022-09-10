@@ -120,7 +120,7 @@ void synth::toThemesPredict(std::string & out,int delta){
     --endIt;
     if(endIt != timeIndex.end()){
         out.clear();
-        int end = endIt->second->begin + endIt->second->delay;
+        int end = endIt->second->begin + endIt->second->duration;
         int posi=0;
         while(posi<end){
             HBB::vec from(posi,0) , to(posi+delta,128);
@@ -138,7 +138,7 @@ void synth::toThemesPredict(std::string & out,int delta){
                 auto self = (self_t*)arg;
                 
                 int noteBegin = n->begin;
-                int noteEnd   = n->begin + n->delay;
+                int noteEnd   = n->begin + n->duration;
                 
                 if(noteBegin > self->end || noteEnd < self->begin)
                     return;
@@ -188,7 +188,7 @@ void synth::toThemesTrain(std::string & out,int delta){
     --endIt;
     if(endIt != timeIndex.end()){
         out.clear();
-        int end = endIt->second->begin + endIt->second->delay;
+        int end = endIt->second->begin + endIt->second->duration;
         int posi=0;
         while(posi<end){
             HBB::vec from(posi,0) , to(posi+delta,128);
@@ -208,7 +208,7 @@ void synth::toThemesTrain(std::string & out,int delta){
                 auto self = (self_t*)arg;
                 
                 int noteBegin = n->begin;
-                int noteEnd   = n->begin + n->delay;
+                int noteEnd   = n->begin + n->duration;
                 
                 if(noteBegin > self->end || noteEnd < self->begin)
                     return;

@@ -14,6 +14,7 @@ editWindow::editWindow(renderContext* p) {
 
     windowWidth = p->windowWidth;
     windowHeight = p->windowHeight;
+    clipboard = p;
 }
 editWindow::~editWindow() {
     if (scroll_texture) {
@@ -37,7 +38,7 @@ void editWindow::onSetSection(int sec) {
 }
 
 void editWindow::rebuildNoteLen() {
-    defaultDelay = noteWidth * TPQ;
+    defaultDuration = noteWidth * TPQ;
     maticBlock = noteWidth * TPQ;
     setSection();
 }
@@ -357,7 +358,7 @@ void editWindow::scrollBuilder_onGetAllNotePos(mgnr::note* n) {
     rect.h = 1;
     if (n->tone > nmin && n->tone < nmax) {
         rect.y = 30 - ((n->tone - nmin) * 30) / hlen;
-        rect.w = (n->delay * 1024) / noteTimeMax;
+        rect.w = (n->duration * 1024) / noteTimeMax;
         if (rect.w <= 0)
             rect.w = 1;
         rect.x = (n->begin * 1024) / noteTimeMax;

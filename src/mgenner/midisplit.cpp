@@ -36,7 +36,7 @@ void synth::splitTracks() {
 
     for (auto it : sortedNotes) {
         int begin = it.second->begin;
-        int dur = it.second->delay;
+        int dur = it.second->duration;
 
         if (begin < 0 || dur <= 0) {  //begin dur小于0是错误的音符
             continue;
@@ -133,7 +133,7 @@ void synth::toHashSeries(std::vector<std::pair<int, int> >& out) {
                  (int)it.second->begin,
                  (int)it.second->tone,
                  (int)it.second->volume,
-                 (int)it.second->delay);
+                 (int)it.second->duration);
         //std::cout<<ser<<std::endl;
         if (it.first == ntime) {
             ser += buf;

@@ -17,7 +17,7 @@ namespace mgnr{
             midiMap();
             ~midiMap();
             stringPool strPool;
-            note * addNote(float position,float tone,float delay,int v,const stringPool::stringPtr & info,int id_set=-1);
+            note * addNote(float position,float tone,float duration,int v,const stringPool::stringPtr & info,int id_set=-1);
             void removeNote(note * p,bool unselect=true);
             void resizeNote(note * p);
 

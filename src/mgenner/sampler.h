@@ -69,7 +69,7 @@ inline std::set<int> sampleChord(T& self, double beat, double len, int base, con
             int resval = n->tone - base;
             res.insert(resval);
 
-            //std::cout<<"fetch:"<<n->begin/(double)self.TPQ<<" "<<(n->begin+n->delay)/(double)self.TPQ<<" "<<n->tone<<std::endl;
+            //std::cout<<"fetch:"<<n->begin/(double)self.TPQ<<" "<<(n->begin+n->duration)/(double)self.TPQ<<" "<<n->tone<<std::endl;
         }
     });
     return res;

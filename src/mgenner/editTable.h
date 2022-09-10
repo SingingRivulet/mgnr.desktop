@@ -12,7 +12,7 @@ struct noteInfo {
     //音符数据（如果是删除的话）
     float position;
     float tone;
-    float delay;
+    float duration;
     int volume;
     int id;
     std::string info;
@@ -20,10 +20,20 @@ struct noteInfo {
         : info(p->info.value()) {
         position = p->begin;
         tone = p->tone;
-        delay = p->delay;
+        duration = p->duration;
         volume = p->volume;
         id = p->id;
     }
+};
+struct displayBuffer_t {
+    float begin;
+    float tone;
+    float dur;
+    int volume;
+    stringPool::stringPtr info;
+};
+struct clipboard_t {
+    std::vector<displayBuffer_t> noteTemplate;
 };
 struct history : public std::enable_shared_from_this<history> {
     enum {
@@ -82,7 +92,7 @@ class editTable : public midiMap {
     int selectByArea(int selectBoxX, int selectBoxXend, int selectBoxY, int selectBoxYend);
 
     void drawNoteAbs(note*);  //画音符绝对坐标
-    void drawNoteAbs(float begin, float tone, float delay, float volume, const stringPool::stringPtr& info, bool selected, bool onlydisplay = false);
+    void drawNoteAbs(float begin, float tone, float duration, float volume, const stringPool::stringPtr& info, bool selected, bool onlydisplay = false);
     void findNote();  //根据参数找到搜索矩形，利用HBB找到音符
     void drawTableRaws();
     bool drawToneRaw(int t);
@@ -133,7 +143,7 @@ class editTable : public midiMap {
     bool isMajor;
     int getBaseTone();  //获取调性
 
-    float defaultDelay;                 //持续时间
+    float defaultDuration;                 //持续时间
     int defaultVolume;                  //音量
     stringPool::stringPtr defaultInfo;  //信息
 
@@ -195,15 +205,8 @@ class editTable : public midiMap {
     bool instrumentLoaded[128];
 
    public:
-    struct displayBuffer_t {
-        float begin;
-        float tone;
-        float dur;
-        int volume;
-        stringPool::stringPtr info;
-    };
     std::vector<displayBuffer_t> displayBuffer;
-    std::vector<displayBuffer_t> noteTemplate;
+    clipboard_t* clipboard;
     void undo();
     void redo();
     void copy();

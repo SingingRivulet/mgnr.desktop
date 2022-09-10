@@ -9,7 +9,7 @@ editTable::editTable() {
     lookAtY = 64;
     noteHeight = 20;
     noteLength = 0.6;
-    defaultDelay = 120;
+    defaultDuration = 120;
     maticBlock = 120;
     defaultVolume = 50;
     defaultInfo = strPool.create("default");
@@ -175,7 +175,7 @@ void editTable::clickToSetDescription(int x, int y, const std::function<void(int
 note* editTable::clickToAdd(int x, int y) {
     auto p = screenToAbs(x, y);
     automatic(p.X, p.Y);
-    auto ptr = addNote(p.X, p.Y, defaultDelay, defaultVolume, defaultInfo);
+    auto ptr = addNote(p.X, p.Y, defaultDuration, defaultVolume, defaultInfo);
 
     printf("mgenner:add %d %d\n", x, y);
     auto hisptr = std::make_shared<history>();  //插入历史记录
@@ -223,13 +223,44 @@ void editTable::resizeSelected(int delta) {
     float shift = delta * maticBlock;  //需要偏移的长度
     //扫描长度是否足够
     for (auto it : selected) {
-        if (it->delay + shift <= 10) {
+        if (it->duration + shift <= 10) {
             //长度不足
+            return;
+        }
+
+        struct arg_t {
+            bool res;
+            int x;
+            int defaultDuration;
+            note* selfNote;
+        } arg;
+        arg.x = it->begin;
+        arg.defaultDuration = it->duration + shift;
+        arg.res = true;
+        arg.selfNote = it;
+        find(
+            HBB::vec(it->begin, it->tone + 0.1),
+            HBB::vec(it->begin + it->duration + shift, it->tone + 0.8),
+            [](note* n, void* arg) {
+                auto self = (arg_t*)arg;
+                if (self->selfNote == n) {
+                    return;
+                }
+                if (n->begin >= (self->x + self->defaultDuration)) {
+                    return;
+                }
+                if ((n->begin + n->duration) <= self->x) {
+                    return;
+                }
+                self->res = false;
+            },
+            &arg);
+        if (!arg.res) {
             return;
         }
     }
     for (auto it : selected) {
-        it->delay += shift;
+        it->duration += shift;
         resizeNote(it);
     }
 }
@@ -280,7 +311,7 @@ int editTable::clickToSelect(int x, int y) {
             auto self = (editTable*)arg;
             if (!n->selected) {  //未选择就加上选择
                 self->selected.insert(n);
-                printf("mgenner:select:%f %f %s delay:%f volume:%d\n", n->begin, n->tone, n->info.c_str(), n->delay, n->volume);
+                printf("mgenner:select:%f %f %s duration:%f volume:%d\n", n->begin, n->tone, n->info.c_str(), n->duration, n->volume);
                 n->selected = true;
 
                 if (n->info != self->defaultInfo) {
@@ -389,22 +420,22 @@ void editTable::clickToDisplay(int x, int y) {
     struct arg_t {
         bool* res;
         int x;
-        int defaultDelay;
+        int defaultDuration;
     } arg;
     arg.res = &res;
     displayBuffer.clear();
     if (!pasteMode) {
         arg.x = p.X;
-        arg.defaultDelay = defaultDelay;
+        arg.defaultDuration = defaultDuration;
         find(
             HBB::vec(p.X, p.Y + 0.1),
-            HBB::vec(p.X + defaultDelay, p.Y + 0.8),
+            HBB::vec(p.X + defaultDuration, p.Y + 0.8),
             [](note* n, void* arg) {
                 auto self = (arg_t*)arg;
-                if (n->begin >= (self->x + self->defaultDelay)) {
+                if (n->begin >= (self->x + self->defaultDuration)) {
                     return;
                 }
-                if ((n->begin + n->delay) <= self->x) {
+                if ((n->begin + n->duration) <= self->x) {
                     return;
                 }
                 *(self->res) = false;
@@ -412,18 +443,18 @@ void editTable::clickToDisplay(int x, int y) {
             &arg);
     } else {
         //粘贴模式
-        for (auto& it : noteTemplate) {
-            arg.defaultDelay = it.dur;
+        for (auto& it : clipboard->noteTemplate) {
+            arg.defaultDuration = it.dur;
             arg.x = p.X + it.begin;
             find(
                 HBB::vec(p.X + it.begin, p.Y + it.tone + 0.1),
                 HBB::vec(p.X + it.begin + +it.dur, p.Y + it.tone + 0.8),
                 [](note* n, void* arg) {
                     auto self = (arg_t*)arg;
-                    if (n->begin >= (self->x + self->defaultDelay)) {
+                    if (n->begin >= (self->x + self->defaultDuration)) {
                         return;
                     }
-                    if ((n->begin + n->delay) <= self->x) {
+                    if ((n->begin + n->duration) <= self->x) {
                         return;
                     }
                     *(self->res) = false;
@@ -439,11 +470,11 @@ void editTable::clickToDisplay(int x, int y) {
         tmp.begin = p.X;
         tmp.tone = p.Y;
         tmp.info = defaultInfo;
-        tmp.dur = defaultDelay;
+        tmp.dur = defaultDuration;
         tmp.volume = defaultVolume;
         displayBuffer.push_back(tmp);
     } else {
-        for (auto& it : noteTemplate) {
+        for (auto& it : clipboard->noteTemplate) {
             displayBuffer_t tmp;
             tmp.begin = p.X + it.begin;
             tmp.tone = p.Y + it.tone;
@@ -506,7 +537,7 @@ void editTable::findNote() {
 }
 
 void editTable::drawNoteAbs(note* n) {
-    drawNoteAbs(n->begin, n->tone, n->delay, n->volume, n->info, n->selected);
+    drawNoteAbs(n->begin, n->tone, n->duration, n->volume, n->info, n->selected);
 }
 
 void editTable::drawTableColumns() {
@@ -693,7 +724,7 @@ bool editTable::drawToneRaw(int t) {
     return true;
 }
 
-void editTable::drawNoteAbs(float begin, float tone, float delay, float volume, const stringPool::stringPtr& info, bool selected, bool onlydisplay) {
+void editTable::drawNoteAbs(float begin, float tone, float duration, float volume, const stringPool::stringPtr& info, bool selected, bool onlydisplay) {
     float relX = begin - lookAtX;  //相对坐标
     float relY = tone - realLookAtY;
 
@@ -704,7 +735,7 @@ void editTable::drawNoteAbs(float begin, float tone, float delay, float volume, 
 
     scrY = scrYto - noteHeight;  //翻转过，当然要减
 
-    int scrXto = scrX + delay * noteLength;
+    int scrXto = scrX + duration * noteLength;
 
     vPosi(scrX, windowWidth);  //验证
     vPosi(scrXto, windowWidth);
@@ -726,7 +757,7 @@ void editTable::toString(std::string& str) {
     snprintf(tbuf, sizeof(tbuf), "!T%d\n", TPQ);
     str += tbuf;
     for (auto it : notes) {
-        snprintf(tbuf, sizeof(tbuf), "+%s %f %f %f %d\n", it->info.c_str(), it->begin, it->tone, it->delay, it->volume);
+        snprintf(tbuf, sizeof(tbuf), "+%s %f %f %f %d\n", it->info.c_str(), it->begin, it->tone, it->duration, it->volume);
         str += tbuf;
     }
     for (auto it : timeMap) {
@@ -747,16 +778,16 @@ void editTable::loadString(const std::string& str) {
                 std::string info;
                 float position;
                 float tone;
-                float delay;
+                float duration;
                 int v;
 
                 ts >> info;
                 ts >> position;
                 ts >> tone;
-                ts >> delay;
+                ts >> duration;
                 ts >> v;
 
-                addNote(position, tone, delay, v, strPool.create(info));
+                addNote(position, tone, duration, v, strPool.create(info));
             }
         } else if (buf[0] == '!') {
             if (strlen(buf) >= 3) {
@@ -828,7 +859,7 @@ void editTable::undo() {
                 for (auto& itn : h->notes) {
                     auto n = addNote(itn->position,
                                      itn->tone,
-                                     itn->delay,
+                                     itn->duration,
                                      itn->volume,
                                      strPool.create(itn->info),
                                      itn->id);
@@ -874,7 +905,7 @@ void editTable::redo() {
                 for (auto& itn : h->notes) {
                     auto n = addNote(itn->position,
                                      itn->tone,
-                                     itn->delay,
+                                     itn->duration,
                                      itn->volume,
                                      strPool.create(itn->info),
                                      itn->id);
@@ -1030,8 +1061,8 @@ int editTable::getBaseTone() {
     }
     int note_count = 0;
     for (auto note : selected) {
-        note_count += note->delay;
-        single_note_count[(((int)note->tone) + 12) % 12] += note->delay;
+        note_count += note->duration;
+        single_note_count[(((int)note->tone) + 12) % 12] += note->duration;
     }
     std::tuple<int, float> major_prob[12];
     for (int base = 0; base < 12; ++base) {
@@ -1089,15 +1120,15 @@ void editTable::copy() {
         first = false;
     }
     //创建剪贴板
-    noteTemplate.clear();
+    clipboard->noteTemplate.clear();
     for (auto it : selected) {
         displayBuffer_t tmp;
         tmp.begin = it->begin - minTime;
         tmp.tone = it->tone - minTone;
         tmp.info = it->info;
-        tmp.dur = it->delay;
+        tmp.dur = it->duration;
         tmp.volume = it->volume;
-        noteTemplate.push_back(tmp);
+        clipboard->noteTemplate.push_back(tmp);
     }
 }
 

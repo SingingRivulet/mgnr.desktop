@@ -17,7 +17,7 @@
 #include "synth.h"
 #include "vscript/vscript_ui.h"
 class editWindow;
-struct renderContext {
+struct renderContext : public mgnr::clipboard_t {
     renderContext();
     ~renderContext();
 
