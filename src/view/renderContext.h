@@ -57,6 +57,12 @@ struct renderContext {
     void toneMapInit();
 
     SDL_Texture* getText(const std::string& str, const SDL_Color& textColor, SDL_Rect& rect);
+
+    bool shutdowning = false;
+    bool closeWithShutdown = false;
+    bool showingCloseWindow = false;
+    void shutdown_process();
+    void showCloseWindow();
     //////////////////////////////////////////////////////////////////
     //框选
     bool selectByBox = false;
@@ -88,7 +94,14 @@ struct renderContext {
     std::string midiDescriptionBuffer_title;
 
     bool show_trackMap_window = false;
-    std::list<std::tuple<std::string, int, int>> trackMapBuffer;
+    std::vector<std::tuple<std::string, int, int>> trackMapBuffer;
+    std::vector<int> trackMapBuffer_index;
+    void sortTrackMapBufferByName();
+    void sortTrackMapBufferByTrack();
+    void sortTrackMapBufferByInstrument();
+    void sortTrackMapBuffer();
+    int sortTrackMapBuffer_sortId = 0;
+    bool sortTrackMapBuffer_sortInv = false;
     bool trackMapBuffer_closeWithSave = false;
     int trackMapBuffer_setInstrument_track;
     int trackMapBuffer_setInstrument_ins;

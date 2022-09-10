@@ -22,6 +22,7 @@ void renderContext::ui_shutdown() {
 
 void renderContext::ui_loop() {
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
     if (ImGui::Begin("播放控制", nullptr,
                      ImGuiWindowFlags_NoResize |
                          ImGuiWindowFlags_NoTitleBar |
@@ -125,8 +126,12 @@ void renderContext::ui_loop() {
             fileDialog_openMidi.ClearSelected();
         }
         if (fileDialog_saveMidi.HasSelected()) {
-            printf("mgenner:save:%s\n", fileDialog_saveMidi.GetSelected().string().c_str());
-            saveMidiFile(fileDialog_saveMidi.GetSelected().string());
+            std::string savePath = fileDialog_saveMidi.GetSelected().string();
+            if (!editWindow::checkExt(savePath.c_str(), "mid")) {
+                savePath += ".mid";
+            }
+            printf("mgenner:save:%s\n", savePath.c_str());
+            saveMidiFile(savePath);
             fileDialog_saveMidi.ClearSelected();
         }
     }
@@ -141,15 +146,27 @@ void renderContext::ui_loop() {
             } else {
                 tabTitle = it.second->fileName.c_str();
             }
-            if (ImGui::BeginTabItem(tabTitle, &opened, ImGuiTabItemFlags_None)) {
+            int tabFlag = ImGuiTabItemFlags_None;
+            if (it.second->editStatus) {
+                tabFlag |= ImGuiTabItemFlags_UnsavedDocument;
+            }
+            if (ImGui::BeginTabItem(tabTitle, &opened, tabFlag)) {
                 auto p = it.second.get();
                 if (p != drawing) {
                     showWindow(p);
                 }
                 ImGui::EndTabItem();
             }
+            if (!it.second->midiFilePath.empty() && ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", it.second->midiFilePath.c_str());
+            }
             if (!opened) {
-                closeWindow(it.first);
+                if (it.second->editStatus) {
+                    closeWithShutdown = false;
+                    showingCloseWindow = true;
+                } else {
+                    closeWindow(it.first);
+                }
             }
         }
         ImGui::EndTabBar();
@@ -158,6 +175,7 @@ void renderContext::ui_loop() {
     ImGui::SetWindowSize(ImVec2(windowWidth, menuHeight));
     checkfocus();
     ImGui::End();
+    ImGui::PopStyleVar();
 
     if (drawing) {
         if (drawing->show_edit_window) {
@@ -519,22 +537,31 @@ void renderContext::ui_loop() {
                 }
                 ImGui::TextWrapped("此表设置的是输出的midi文件中的轨道关系，和播放时的乐器无关");
                 ImGui::TextUnformatted("");
-                if (ImGui::BeginTable("音轨映射表", 3)) {
-                    ImGui::TableNextColumn();
-                    ImGui::Text("音轨名称");
-                    ImGui::TableNextColumn();
-                    ImGui::Text("音轨");
-                    ImGui::TableNextColumn();
-                    ImGui::Text("乐器");
+                if (ImGui::BeginTable("音轨映射表", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Sortable)) {
+                    ImGui::TableSetupColumn("音轨名称", ImGuiTableColumnFlags_DefaultSort, 0.0f, 0);
+                    ImGui::TableSetupColumn("音轨", ImGuiTableColumnFlags_None, 0.0f, 1);
+                    ImGui::TableSetupColumn("乐器", ImGuiTableColumnFlags_None, 0.0f, 2);
+                    ImGui::TableHeadersRow();
+
+                    if (ImGuiTableSortSpecs* sorts_specs = ImGui::TableGetSortSpecs()) {
+                        if (sorts_specs->SpecsDirty) {
+                            sortTrackMapBuffer_sortId = sorts_specs->Specs->ColumnUserID;
+                            sortTrackMapBuffer_sortInv = (sorts_specs->Specs->SortDirection == ImGuiSortDirection_Ascending);
+                            sortTrackMapBuffer();
+                            sorts_specs->SpecsDirty = false;
+                        }
+                    }
+
                     char buf[256];
                     int index = 1;
-                    for (auto& it : trackMapBuffer) {
+                    for (auto id : trackMapBuffer_index) {
+                        auto& it = trackMapBuffer.at(id);
                         ImGui::TableNextRow();
                         ImGui::TableNextColumn();
                         ImGui::Text("%s", std::get<0>(it).c_str());
                         ImGui::TableNextColumn();
                         int n = std::get<1>(it);
-                        snprintf(buf, sizeof(buf), "音轨%d", index);
+                        snprintf(buf, sizeof(buf), "##音轨%d", index);
                         if (ImGui::InputInt(buf, &std::get<1>(it))) {
                             if (std::get<1>(it) < 0) {
                                 std::get<1>(it) = 0;
@@ -646,6 +673,7 @@ void renderContext::trackMapBuffer_init(std::map<std::string, int>& trackNameMap
         }
         trackMapBuffer.push_back(std::move(t));
     }
+    sortTrackMapBuffer();
 }
 void renderContext::trackMapBuffer_save() {
     if (drawing == nullptr) {

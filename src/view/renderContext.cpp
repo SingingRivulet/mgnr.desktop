@@ -68,7 +68,7 @@ void renderContext::loop() {
     while (SDL_PollEvent(&event)) {
         ImGui_ImplSDL2_ProcessEvent(&event);
         if (event.type == SDL_QUIT) {
-            running = false;
+            shutdowning = true;
         } else if (event.type == SDL_WINDOWEVENT &&
                    event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
             windowWidth = event.window.data1;
@@ -119,6 +119,12 @@ void renderContext::draw() {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
     ui_loop();
+
+    if (shutdowning) {
+        shutdown_process();
+    }
+
+    showCloseWindow();
 
     SDL_RenderClear(renderer);
 
@@ -176,10 +182,15 @@ std::tuple<int, editWindow*> renderContext::createWindow() {
     if (drawing == nullptr) {
         showWindow(p.get());
     }
-    int id = ++windows_current_id;
+    p->windowId = ++windows_current_id;
     auto ptr = p.get();
-    editWindows[id] = std::move(p);
-    return std::make_tuple(id, ptr);
+
+    char buf[128];
+    snprintf(buf, sizeof(buf), "新文件%d", p->windowId);
+    p->fileName = buf;
+
+    editWindows[p->windowId] = std::move(p);
+    return std::make_tuple(ptr->windowId, ptr);
 }
 void renderContext::closeWindow(int id) {
     auto it = editWindows.find(id);
@@ -204,5 +215,129 @@ void renderContext::showWindow(int id) {
     auto it = editWindows.find(id);
     if (it != editWindows.end()) {
         showWindow(it->second.get());
+    }
+}
+
+void renderContext::showCloseWindow() {
+    if (showingCloseWindow) {
+        bool opening = true;
+        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_Always);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.8f, 0.8f, 0.8f, 0.5f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+        if (ImGui::Begin("关闭窗口遮罩", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar)) {
+            ImGui::PopStyleColor();
+            ImGui::PopStyleVar();
+            if (ImGui::Begin("关闭窗口",
+                             &opening,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text("文件“%s”尚未保存", drawing->fileName.c_str());
+                ImGui::Text("是否保存文件？");
+                if (ImGui::Button("是")) {
+                    saveMidiFile();
+                    showingCloseWindow = false;
+                    closeWithShutdown = false;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("否")) {
+                    closeWindow(drawing->windowId);
+                    if (closeWithShutdown) {
+                        shutdowning = true;
+                    }
+                    showingCloseWindow = false;
+                    closeWithShutdown = false;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("取消")) {
+                    opening = false;
+                }
+            }
+            ImGui::SetWindowFocus("关闭窗口");
+            ImGui::End();
+        }
+        focusCanvas = false;
+        ImGui::End();
+        if (!opening) {
+            //关闭了窗口
+            closeWithShutdown = false;
+            showingCloseWindow = false;
+        }
+    }
+}
+
+void renderContext::shutdown_process() {
+    do {
+        if (drawing) {
+            if (drawing->editStatus) {
+                shutdowning = false;
+                closeWithShutdown = true;
+                showingCloseWindow = true;
+                return;
+            } else {
+                closeWindow(drawing->windowId);
+                drawing = nullptr;
+            }
+        }
+        auto it = editWindows.begin();
+        if (it != editWindows.end()) {
+            drawing = it->second.get();
+        }
+    } while (drawing);
+    running = false;
+}
+void renderContext::sortTrackMapBufferByName() {
+    std::sort(trackMapBuffer_index.begin(), trackMapBuffer_index.end(), [&](int a, int b) {
+        auto ta = std::get<0>(drawing->getInstrumentTrack(std::get<0>(trackMapBuffer[a]).c_str()));
+        auto tb = std::get<0>(drawing->getInstrumentTrack(std::get<0>(trackMapBuffer[b]).c_str()));
+        bool res;
+        if (ta == tb) {
+            res = std::get<0>(trackMapBuffer[a]) > std::get<0>(trackMapBuffer[b]);
+        } else {
+            res = ta > tb;
+        }
+        if (sortTrackMapBuffer_sortInv)
+            return res;
+        else
+            return !res;
+    });
+}
+void renderContext::sortTrackMapBufferByTrack() {
+    std::sort(trackMapBuffer_index.begin(), trackMapBuffer_index.end(), [&](int a, int b) {
+        auto res = std::get<1>(trackMapBuffer[a]) > std::get<1>(trackMapBuffer[b]);
+        if (sortTrackMapBuffer_sortInv)
+            return res;
+        else
+            return !res;
+    });
+}
+void renderContext::sortTrackMapBufferByInstrument() {
+    std::sort(trackMapBuffer_index.begin(), trackMapBuffer_index.end(), [&](int a, int b) {
+        auto res = std::get<2>(trackMapBuffer[a]) > std::get<2>(trackMapBuffer[b]);
+        if (sortTrackMapBuffer_sortInv)
+            return res;
+        else
+            return !res;
+    });
+}
+void renderContext::sortTrackMapBuffer() {
+    trackMapBuffer_index.clear();
+    int len = trackMapBuffer.size();
+    if (len > 0) {
+        for (int i = 0; i < len; ++i) {
+            trackMapBuffer_index.push_back(i);
+        }
+        switch (sortTrackMapBuffer_sortId) {
+            case 0:
+                sortTrackMapBufferByName();
+                break;
+            case 1:
+                sortTrackMapBufferByTrack();
+                break;
+            case 2:
+                sortTrackMapBufferByInstrument();
+                break;
+            default:
+                break;
+        }
     }
 }
