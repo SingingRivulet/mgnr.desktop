@@ -10,69 +10,72 @@
 
 namespace mgnr {
 
-    class offline : public synth {
-    private:
-        tsf *soundfont;
-        double nowTime = 0;
-        double sampleRate = 44100;
-        int nowTime_point = 0;
-    public:
-        offline(const char *sf, int sampleRate = 44100);
+class offline : public synth {
+   private:
+    tsf* soundfont = nullptr;
+    double nowTime = 0;
+    double sampleRate = 44100;
+    int nowTime_point = 0;
 
-        ~offline();
+   public:
+    offline(const char* sf, int sampleRate = 44100);
 
-        void rebuildNoteLen() override;
+    offline();
 
-        void drawNote_begin() override;
+    ~offline();
 
-        void drawNote(int fx, int fy, int tx, int ty, int volume, const stringPool::stringPtr &info,
-                      bool selected, bool onlydisplay = false) override;
+    void rebuildNoteLen() override;
 
-        void drawNote_end() override;
+    void drawNote_begin() override;
 
-        void drawTableRaw(int from, int to, int left, int right, int t) override;
+    void drawNote(int fx, int fy, int tx, int ty, int volume, const stringPool::stringPtr& info, bool selected, bool onlydisplay = false) override;
 
-        void drawTimeCol(float p) override;
+    void drawNote_end() override;
 
-        void drawSectionCol(float p, int n) override;
+    void drawTableRaw(int from, int to, int left, int right, int t) override;
 
-        void drawTempo(float p, double t) override;
+    void drawTimeCol(float p) override;
 
-        void drawTempoPadd() override;
+    void drawSectionCol(float p, int n) override;
 
-        void drawScroll() override;
+    void drawTempo(float p, double t) override;
 
-        void drawDescriptions(float p, const stringPool::stringPtr &title,
-                              const std::string &content) override;
+    void drawTempoPadd() override;
 
-        void drawDescriptionsPadd() override;
+    void drawScroll() override;
 
-        void drawCaption(float p, const std::string &str) override;
+    void drawDescriptions(float p, const stringPool::stringPtr& title, const std::string& content) override;
 
-        void scrollBuilder_onGetNoteArea() override;
+    void drawDescriptionsPadd() override;
 
-        void scrollBuilder_onGetAllNotePos(note *) override;
+    void drawCaption(float p, const std::string& str) override;
 
-        void scrollBuilder_onSwap() override;
+    void scrollBuilder_onGetNoteArea() override;
 
-        void onNoteOn(note *n, int c) override;
+    void scrollBuilder_onGetAllNotePos(note*) override;
 
-        void onNoteOff(note *n, int c) override;
+    void scrollBuilder_onSwap() override;
 
-        void onSetChannelIns(int c, int ins) override;
+    void onNoteOn(note* n, int c) override;
 
-        void callSynthNoteOn(const char *info, int channel, int tone, int vol) override;
+    void onNoteOff(note* n, int c) override;
 
-        void callSynthNoteOff(const char *info, int channel, int tone) override;
+    void onSetChannelIns(int c, int ins) override;
 
-        void onLoadName(const stringPool::stringPtr &name) override;
+    void callSynthNoteOn(const char* info, int channel, int tone, int vol) override;
 
-        void onSelectedChange(int len) override;
+    void callSynthNoteOff(const char* info, int channel, int tone) override;
 
-        int getTime() override;
+    void onLoadName(const stringPool::stringPtr& name) override;
 
-        bool renderStep(float *buffer);
-    };
-}
+    void onSelectedChange(int len) override;
 
-#endif //MIDILIB_OFFLINE_H
+    int getTime() override;
+
+    bool renderStep(float* buffer);
+
+    void editStatusUpdate() override;
+};
+}  // namespace mgnr
+
+#endif  //MIDILIB_OFFLINE_H

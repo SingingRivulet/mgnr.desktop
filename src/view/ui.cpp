@@ -643,12 +643,10 @@ void renderContext::ui_loop() {
     fileDialog_saveMidi.Display();
     fileDialog_loadMidi.Display();
     fileDialog_openMidi.Display();
-    fileDialog_importMidi.Display();
     if (ImGui::IsAnyItemHovered() ||
         !fileDialog_loadMidi.focusCanvas ||
         !fileDialog_saveMidi.focusCanvas ||
-        !fileDialog_openMidi.focusCanvas ||
-        !fileDialog_importMidi.focusCanvas) {
+        !fileDialog_openMidi.focusCanvas) {
         focusCanvas = false;
     }
     if (drawing && !drawing->show_edit_window) {

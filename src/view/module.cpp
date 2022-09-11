@@ -239,7 +239,7 @@ static int lua_registerModule(lua_State* L) {
     return 0;
 }
 
-static int lua_vscript_getInput(lua_State* L) {
+static int lua_vscript_getInput_string(lua_State* L) {
     //self,port
     //从端口获取一个值，同时将其删除
     if (!lua_islightuserdata(L, 1)) {
@@ -254,16 +254,51 @@ static int lua_vscript_getInput(lua_State* L) {
         auto& port = self->input.at(portId);
         if (port->data.size() > 0) {
             std::shared_ptr<mgnr::vscript::value> d = port->data.front();
+            try {
+                auto ptr = std::dynamic_pointer_cast<mgnr::vscript::value_string>(d);
+                if (ptr == nullptr) {
+                    return luaL_argerror(L, 2, "获取值失败");
+                }
+                lua_pushstring(L, ptr->data.c_str());
+                port->data.pop_front();
+                return 1;
+            } catch (...) {
+                return luaL_argerror(L, 2, "获取值失败");
+            }
+        } else {
+            return luaL_argerror(L, 2, "缓冲区为空");
+        }
 
-            if (d->data.type() == typeid(std::string)) {
-                lua_pushstring(L, std::any_cast<std::string>(d->data).c_str());
+    } catch (...) {
+    }
+
+    lua_pushboolean(L, false);
+    return 1;
+}
+static int lua_vscript_getInput_int(lua_State* L) {
+    //self,port
+    //从端口获取一个值，同时将其删除
+    if (!lua_islightuserdata(L, 1)) {
+        return 0;
+    }
+    auto self = (node_lua*)lua_touserdata(L, 1);
+    if (self == nullptr) {
+        return 0;
+    }
+    int portId = luaL_checkinteger(L, 2);
+    try {
+        auto& port = self->input.at(portId);
+        if (port->data.size() > 0) {
+            std::shared_ptr<mgnr::vscript::value> d = port->data.front();
+            try {
+                auto ptr = std::dynamic_pointer_cast<mgnr::vscript::value_int>(d);
+                if (ptr == nullptr) {
+                    return luaL_argerror(L, 2, "获取值失败");
+                }
+                lua_pushinteger(L, ptr->data);
                 port->data.pop_front();
                 return 1;
-            } else if (d->data.type() == typeid(int)) {
-                lua_pushinteger(L, std::any_cast<int>(d->data));
-                port->data.pop_front();
-                return 1;
-            } else {
+            } catch (...) {
                 return luaL_argerror(L, 2, "获取值失败");
             }
         } else {
@@ -311,15 +346,17 @@ static int lua_vscript_send(lua_State* L) {
     int portId = luaL_checkinteger(L, 2);
     try {
         auto& port = self->output.at(portId);
-        auto d = std::make_shared<mgnr::vscript::value>();
-        d->data.reset();
+        bool status = false;
         if (lua_isstring(L, 3)) {
+            auto d = std::make_shared<mgnr::vscript::value_string>();
             d->data = std::string(lua_tostring(L, 3));
+            port->send(d);
         } else if (lua_isinteger(L, 3)) {
+            auto d = std::make_shared<mgnr::vscript::value_int>();
             d->data = (int)lua_tointeger(L, 3);
+            port->send(d);
         }
-        port->send(d);
-        lua_pushboolean(L, true);
+        lua_pushboolean(L, status);
         return 1;
     } catch (...) {
     }
@@ -370,8 +407,12 @@ void renderContext::loadConfig() {
         {
             lua_newtable(lua_mainthread);
 
-            lua_pushstring(lua_mainthread, "getInput");
-            lua_pushcfunction(lua_mainthread, lua_vscript_getInput);
+            lua_pushstring(lua_mainthread, "getInput_string");
+            lua_pushcfunction(lua_mainthread, lua_vscript_getInput_string);
+            lua_settable(lua_mainthread, -3);
+
+            lua_pushstring(lua_mainthread, "getInput_int");
+            lua_pushcfunction(lua_mainthread, lua_vscript_getInput_int);
             lua_settable(lua_mainthread, -3);
 
             lua_pushstring(lua_mainthread, "getInputLen");

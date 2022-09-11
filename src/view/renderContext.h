@@ -112,7 +112,6 @@ struct renderContext : public mgnr::clipboard_t {
     ImGui::FileBrowser fileDialog_loadMidi;
     ImGui::FileBrowser fileDialog_openMidi;
     ImGui::FileBrowser fileDialog_saveMidi;
-    ImGui::FileBrowser fileDialog_importMidi;
 
     void loadMidiDialog();
     void saveMidiDialog();

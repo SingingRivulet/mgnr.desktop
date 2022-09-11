@@ -188,4 +188,6 @@ void script::exec_node(node* n) {
     }
 }
 
+script::~script() {}
+value::~value() {}
 }  // namespace mgnr::vscript

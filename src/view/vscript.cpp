@@ -1,4 +1,8 @@
 #include "mgenner.h"
+#include "sysmodule/fileselector.h"
+#include "sysmodule/loadToWindow.h"
+#include "sysmodule/midiloader.h"
+#include "sysmodule/print.h"
 
 void renderContext::module_nodeEditor() {
     if (module_showNodeEditor) {
@@ -30,79 +34,6 @@ void renderContext::module_nodeEditor() {
         ImGui::End();
     }
 }
-//文件选择节点
-struct node_getFile : public mgnr::vscript::node_ui {
-    renderContext* global;
-    char module_importFilePath[512];
-    node_getFile(renderContext* global) {
-        this->global = global;
-        bzero(module_importFilePath, sizeof(module_importFilePath));
-        this->name = "加载文件";
-        std::unique_ptr<mgnr::vscript::port_output> out0(new mgnr::vscript::port_output);
-        out0->name = "文件路径";
-        out0->type = "字符串";
-        this->output.push_back(std::move(out0));
-        this->removeable = false;
-    }
-    void exec() override {
-        global->scriptConsole.push_back(
-            std::string("加载文件:") + module_importFilePath);
-        auto p = std::make_shared<mgnr::vscript::value>();
-        p->data = std::string(module_importFilePath);
-        this->output[0]->send(p);
-    }
-    void draw() override {
-        if (global->fileDialog_importMidi.HasSelected()) {
-            snprintf(module_importFilePath,
-                     sizeof(module_importFilePath), "%s",
-                     global->fileDialog_importMidi.GetSelected().c_str());
-            global->fileDialog_importMidi.ClearSelected();
-        }
-
-        ImNodes::BeginStaticAttribute(staticAttributeId);
-        if (module_importFilePath[0] != '\0') {
-            auto file = editWindow::getFileName(module_importFilePath);
-            ImGui::TextWrapped("%s", file);
-        }
-        if (ImGui::Button("选择文件")) {
-            global->fileDialog_importMidi.Open();
-        }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("设置该节点的输出值");
-        }
-        if (ImGui::Button("执行")) {
-            parent->exec(this);
-        }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("向右边端点所连接的节点发送数据");
-        }
-        ImNodes::EndStaticAttribute();
-    }
-    ~node_getFile() override {}
-};
-//输出节点
-struct node_print : public mgnr::vscript::node_ui {
-    renderContext* global;
-    node_print(renderContext* global) {
-        this->global = global;
-        this->name = "输出";
-        std::unique_ptr<mgnr::vscript::port_input> in0(new mgnr::vscript::port_input);
-        in0->name = "输出字符串";
-        in0->type = "字符串";
-        this->input.push_back(std::move(in0));
-    }
-    void exec() override {
-        for (auto& it : input[0]->data) {
-            try {
-                global->scriptConsole.push_back(std::any_cast<std::string>(it->data).c_str());
-            } catch (...) {
-                global->scriptConsole.push_back("节点输出失败");
-            }
-        }
-        input[0]->data.clear();
-    }
-    ~node_print() override {}
-};
 
 void renderContext::vscript_init() {
     vscript.global = this;
@@ -110,21 +41,27 @@ void renderContext::vscript_init() {
     ImNodes::SetNodeGridSpacePos(1, ImVec2(200.0f, 200.0f));
     ///////////////////////////////////////////////////////////////////////////
     //创建初始节点
-    std::unique_ptr<mgnr::vscript::node> node_getFile_n(new node_getFile(this));
-    vscript.addNode(std::move(node_getFile_n));
     //节点类
-    vscript.scriptClass["输入输出"].push_back(
-        std::tuple<
-            std::string,
-            std::function<mgnr::vscript::node*(vscript_t*)>>(
-            "控制台输出节点",
-            [this](vscript_t* s) {
-                std::unique_ptr<mgnr::vscript::node> n(new node_print(this));
-                auto p = s->addNode(std::move(n));
-                ImNodes::SetNodeScreenSpacePos(p->id, ImGui::GetMousePos());
-                ImNodes::SnapNodeToGrid(p->id);
-                return p;
-            }));
+
+#define loadModule(name)                                             \
+    [this](vscript_t* s) {                                           \
+        std::unique_ptr<mgnr::vscript::node> n(new name(this));      \
+        auto p = s->addNode(std::move(n));                           \
+        ImNodes::SetNodeScreenSpacePos(p->id, ImGui::GetMousePos()); \
+        ImNodes::SnapNodeToGrid(p->id);                              \
+        return p;                                                    \
+    }
+#define addModule(dir, title, name)                           \
+    vscript.scriptClass[dir].push_back(                       \
+        std::tuple<                                           \
+            std::string,                                      \
+            std::function<mgnr::vscript::node*(vscript_t*)>>( \
+            title, loadModule(name)));
+
+    addModule("输入输出", "文本输出", node_print);
+    addModule("输入输出", "文件选择", node_getFile);
+    addModule("输入输出", "midi加载", node_midiLoader);
+    addModule("输入输出", "导入midi至当前窗口", node_loadToWindow);
 }
 
 void renderContext::vscript_t::addNodeAt(mgnr::vscript::port_output* p) {

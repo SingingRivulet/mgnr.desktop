@@ -92,7 +92,7 @@ void script_ui::draw(bool* showing) {
             ImNodes::PopColorStyle();
             ImNodes::PopColorStyle();
         }
-
+        ImNodes::MiniMap();
         ImNodes::EndNodeEditor();
 
         //查看节点保存的数据
@@ -104,15 +104,18 @@ void script_ui::draw(bool* showing) {
 
                 auto type = p->type.empty() ? "无类型" : p->type.c_str();
                 if (p->data != nullptr) {
-                    std::string value;
+                    std::string value = "无法获取的类型";
                     try {
-                        if (p->data->data.type() == typeid(std::string)) {
-                            value = std::any_cast<std::string>(p->data->data);
-                        } else if (p->data->data.type() == typeid(int)) {
-                            value = std::to_string(std::any_cast<int>(p->data->data));
+                        auto d = std::dynamic_pointer_cast<mgnr::vscript::value_int>(p->data);
+                        if (d != nullptr) {
+                            value = std::to_string(d->data);
+                        } else {
+                            auto d = std::dynamic_pointer_cast<mgnr::vscript::value_string>(p->data);
+                            if (d != nullptr) {
+                                value = d->data;
+                            }
                         }
-                    } catch (...) {
-                        value = "错误类型";
+                    } catch (std::bad_cast&) {
                     }
                     ImGui::SetTooltip(
                         "类型：%s\n值：%s", type, value.c_str());

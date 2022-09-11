@@ -26,8 +26,8 @@ return {
         output = {},
         menu = "测试节点",
         exec = function(global, self)
-            local i0 = vscript.getInput(self, 0)
-            local i1 = vscript.getInput(self, 1)
+            local i0 = vscript.getInput_string(self, 0)
+            local i1 = vscript.getInput_string(self, 1)
             vscript.print(self, "exec helloworld")
             vscript.print(self, "i0=" .. i0)
             vscript.print(self, "i1=" .. i1)

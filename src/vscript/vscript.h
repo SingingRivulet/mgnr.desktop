@@ -15,7 +15,17 @@ struct script;
 struct node;
 
 struct value {
-    std::any data;
+    inline value() {}
+    value(value&) = delete;
+    virtual ~value();
+};
+
+struct value_string : value {
+    std::string data;
+};
+
+struct value_int : value {
+    int data;
 };
 
 struct link {
@@ -72,6 +82,8 @@ struct script {
     std::map<int, std::unique_ptr<node>> nodes{};
     std::map<int, std::unique_ptr<link>> links{};
     std::map<std::pair<int, int>, link*> links_map{};
+
+    virtual ~script();
 
     node* addNode(std::unique_ptr<node> n);
     void removeNode(node* n);
