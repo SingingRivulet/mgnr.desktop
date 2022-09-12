@@ -15,8 +15,12 @@ struct node_loadToWindow : public mgnr::vscript::node_ui {
         for (auto& it : input[0]->data) {
             try {
                 auto midi = (std::dynamic_pointer_cast<midifile_t>(it));
-                for (auto it : midi->notes) {
-                    global->drawing->addNote(it->begin, it->tone, it->duration, it->volume, it->info);
+                if (midi != nullptr) {
+                    for (auto it : midi->notes) {
+                        global->drawing->addNote(it->begin, it->tone, it->duration, it->volume, it->info);
+                    }
+                } else {
+                    global->scriptConsole.push_back("加载midi失败");
                 }
             } catch (...) {
                 global->scriptConsole.push_back("加载midi失败");

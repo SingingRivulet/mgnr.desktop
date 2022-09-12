@@ -130,14 +130,14 @@ struct renderContext : public mgnr::clipboard_t {
     std::string path_font = "./res/font/font.ttf";
     std::string path_sf2 = "./res/soundfont/sndfnt.sf2";
 
-    struct vclass_t;
+    struct vclass_lua;
     struct moduleConfig {
         std::string name;
         int init = -1;
         int shutdown = -1;
         int drawUI = -1;
         int loop = -1;
-        std::unique_ptr<vclass_t> vclass;
+        std::unique_ptr<vclass_lua> vclass;
     };
     std::vector<moduleConfig*> modules;
     std::vector<moduleConfig*> modules_loop;
@@ -160,28 +160,28 @@ struct renderContext : public mgnr::clipboard_t {
         }
     }
     //节点编辑器
-    struct vclass_t {
+    struct vclass_lua {
         bool needFullInput = true;
         std::string name;
         std::vector<std::tuple<std::string, std::string>> inputs, outputs;
         int exec = -1;
         int draw = -1;
     };
+    struct vscript_t;
+    struct vclass_t {
+        std::string title;
+        std::string menu;
+        std::set<std::string> input_types;
+        std::function<mgnr::vscript::node*(vscript_t*)> callback;
+    };
     struct vscript_t : mgnr::vscript::script_ui {
         renderContext* global;
         bool addNodeMode = false;
-        std::vector<
-            std::tuple<
-                std::string,
-                std::function<mgnr::vscript::node*(vscript_t*)>>>
-            scriptClass_other;
-        std::map<
-            std::string,
-            std::vector<
-                std::tuple<
-                    std::string,
-                    std::function<mgnr::vscript::node*(vscript_t*)>>>>
-            scriptClass;
+        std::vector<std::shared_ptr<vclass_t>> scriptClass_other;
+        std::map<std::string, std::vector<std::shared_ptr<vclass_t>>> scriptClass;
+        std::map<std::string, std::vector<std::shared_ptr<vclass_t>>> scriptClass_type;
+        std::vector<std::shared_ptr<vclass_t>> scriptClass_view;
+        void buildViewClass(const std::string& type);
         vscript_t();
         void onAddNode() override;
         mgnr::vscript::port_output* addNodeAtPort = nullptr;
@@ -189,6 +189,7 @@ struct renderContext : public mgnr::clipboard_t {
         void addNodeAt(mgnr::vscript::port_output* p) override;
     } vscript;
     std::vector<std::string> scriptConsole{};
+    void addVClass(std::shared_ptr<vclass_t> p);
     void vscript_init();
 
     /////////////////////////////////////////////////////////////////////////////

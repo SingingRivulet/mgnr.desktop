@@ -14,8 +14,13 @@ struct node_print : public mgnr::vscript::node_ui {
     void exec() override {
         for (auto& it : input[0]->data) {
             try {
-                global->scriptConsole.push_back(std::dynamic_pointer_cast<mgnr::vscript::value_string>(it)->data);
-            } catch(...) {
+                auto p = std::dynamic_pointer_cast<mgnr::vscript::value_string>(it);
+                if (p != nullptr) {
+                    global->scriptConsole.push_back(p->data);
+                } else {
+                    global->scriptConsole.push_back("类型不匹配");
+                }
+            } catch (...) {
                 global->scriptConsole.push_back("节点输出失败");
             }
         }

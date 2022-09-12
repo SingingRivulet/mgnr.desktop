@@ -23,6 +23,7 @@ return {
             name = "输入1",
             type = "字符串"
         }},
+        input_types = {"字符串"},
         output = {},
         menu = "测试节点",
         exec = function(global, self)

@@ -3,7 +3,7 @@
 
 struct node_lua : public mgnr::vscript::node_ui {
     renderContext* global;
-    renderContext::vclass_t* vclass;
+    renderContext::vclass_lua* vclass;
     node_lua() {
     }
     void exec() override {
@@ -98,7 +98,7 @@ static int lua_registerModule(lua_State* L) {
             lua_pushstring(L, "vscript");
             lua_gettable(L, -2);
             if (lua_istable(L, -1)) {  //是模块
-                std::unique_ptr<renderContext::vclass_t> vclass_p(new renderContext::vclass_t);
+                std::unique_ptr<renderContext::vclass_lua> vclass_p(new renderContext::vclass_lua);
                 vclass_p->name = name;
                 lua_pushstring(L, "input");
                 lua_gettable(L, -2);
@@ -188,46 +188,58 @@ static int lua_registerModule(lua_State* L) {
 
                 //创建节点类
                 auto vpp = vclass_p.get();
-                auto vclass_callback = std::tuple<
-                    std::string,
-                    std::function<mgnr::vscript::node*(renderContext::vscript_t*)>>(
-                    vpp->name,
-                    [vpp, self](renderContext::vscript_t* s) {
-                        node_lua* nl = new node_lua;
-                        nl->global = self;
-                        nl->vclass = vpp;
-                        nl->name = vpp->name;
-                        //构建输入输出
-                        for (auto& it : vpp->inputs) {
-                            std::unique_ptr<mgnr::vscript::port_input> in0(
-                                new mgnr::vscript::port_input);
-                            in0->name = std::get<0>(it);
-                            in0->type = std::get<1>(it);
-                            nl->input.push_back(std::move(in0));
-                        }
-                        for (auto& it : vpp->outputs) {
-                            std::unique_ptr<mgnr::vscript::port_output> out0(
-                                new mgnr::vscript::port_output);
-                            out0->name = std::get<0>(it);
-                            out0->type = std::get<1>(it);
-                            nl->output.push_back(std::move(out0));
-                        }
-                        nl->needFullInput = vpp->needFullInput;
-                        std::unique_ptr<mgnr::vscript::node> n(nl);
-                        auto p = s->addNode(std::move(n));
-                        ImNodes::SetNodeScreenSpacePos(p->id, ImGui::GetMousePos());
-                        ImNodes::SnapNodeToGrid(p->id);
-                        return p;
-                    });
+                auto p_class = std::make_shared<renderContext::vclass_t>();
+                p_class->title = vpp->name;
+                p_class->callback = [vpp, self](renderContext::vscript_t* s) {
+                    node_lua* nl = new node_lua;
+                    nl->global = self;
+                    nl->vclass = vpp;
+                    nl->name = vpp->name;
+                    //构建输入输出
+                    for (auto& it : vpp->inputs) {
+                        std::unique_ptr<mgnr::vscript::port_input> in0(
+                            new mgnr::vscript::port_input);
+                        in0->name = std::get<0>(it);
+                        in0->type = std::get<1>(it);
+                        nl->input.push_back(std::move(in0));
+                    }
+                    for (auto& it : vpp->outputs) {
+                        std::unique_ptr<mgnr::vscript::port_output> out0(
+                            new mgnr::vscript::port_output);
+                        out0->name = std::get<0>(it);
+                        out0->type = std::get<1>(it);
+                        nl->output.push_back(std::move(out0));
+                    }
+                    nl->needFullInput = vpp->needFullInput;
+                    std::unique_ptr<mgnr::vscript::node> n(nl);
+                    auto p = s->addNode(std::move(n));
+                    ImNodes::SetNodeScreenSpacePos(p->id, ImGui::GetMousePos());
+                    ImNodes::SnapNodeToGrid(p->id);
+                    return p;
+                };
 
                 lua_pushstring(L, "menu");
                 lua_gettable(L, -2);
                 if (lua_isstring(L, -1)) {
-                    self->vscript.scriptClass[lua_tostring(L, -1)].push_back(vclass_callback);
-                } else {
-                    self->vscript.scriptClass_other.push_back(vclass_callback);
+                    p_class->menu = lua_tostring(L, -1);
                 }
                 lua_pop(L, 1);
+
+                lua_pushstring(L, "input_types");
+                lua_gettable(L, -2);
+                if (lua_istable(L, -1)) {
+                    int len = luaL_len(L, -1);
+                    for (int i = 1; i <= len; ++i) {
+                        lua_geti(L, -1, i);
+                        if (lua_isstring(L, -1)) {
+                            p_class->input_types.insert(lua_tostring(L, -1));
+                        }
+                        lua_pop(L, 1);
+                    }
+                }
+                lua_pop(L, 1);
+
+                self->addVClass(p_class);
 
                 p->vclass = std::move(vclass_p);
             }

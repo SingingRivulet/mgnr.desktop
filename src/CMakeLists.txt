@@ -45,6 +45,10 @@ add_executable(mgnr
     ./vscript/vscript.cpp
     ./vscript/vscript_ui.cpp
 
+    ./sysmodule/types/wavfile.cpp
+
+    ./utils/WavFile.cpp
+
     ./mgenner/Options.cpp
     ./mgenner/midiMap.cpp
     ./mgenner/Binasc.cpp

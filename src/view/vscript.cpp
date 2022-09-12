@@ -3,6 +3,7 @@
 #include "sysmodule/loadToWindow.h"
 #include "sysmodule/midiloader.h"
 #include "sysmodule/print.h"
+#include "sysmodule/wavloader.h"
 
 void renderContext::module_nodeEditor() {
     if (module_showNodeEditor) {
@@ -35,6 +36,37 @@ void renderContext::module_nodeEditor() {
     }
 }
 
+void renderContext::addVClass(std::shared_ptr<renderContext::vclass_t> p) {
+    for (auto& type : p->input_types) {
+        vscript.scriptClass_type[type].push_back(p);
+    }
+    if (p->menu.empty()) {
+        vscript.scriptClass_other.push_back(std::move(p));
+    } else {
+        vscript.scriptClass[p->menu].push_back(std::move(p));
+    }
+}
+
+void renderContext::vscript_t::buildViewClass(const std::string& type) {
+    scriptClass_view.clear();
+    {
+        auto t = scriptClass_type.find(std::string(""));
+        if (t != scriptClass_type.end()) {
+            for (auto it : t->second) {
+                scriptClass_view.push_back(it);
+            }
+        }
+    }
+    if (!type.empty()) {
+        auto t = scriptClass_type.find(type);
+        if (t != scriptClass_type.end()) {
+            for (auto it : t->second) {
+                scriptClass_view.push_back(it);
+            }
+        }
+    }
+}
+
 void renderContext::vscript_init() {
     vscript.global = this;
     ImNodes::CreateContext();
@@ -51,51 +83,38 @@ void renderContext::vscript_init() {
         ImNodes::SnapNodeToGrid(p->id);                              \
         return p;                                                    \
     }
-#define addModule(dir, title, name)                           \
-    vscript.scriptClass[dir].push_back(                       \
-        std::tuple<                                           \
-            std::string,                                      \
-            std::function<mgnr::vscript::node*(vscript_t*)>>( \
-            title, loadModule(name)));
-
-    addModule("输入输出", "文本输出", node_print);
-    addModule("输入输出", "文件选择", node_getFile);
-    addModule("输入输出", "midi加载", node_midiLoader);
-    addModule("输入输出", "导入midi至当前窗口", node_loadToWindow);
+#define addModule(dir, title_i, name, input)                  \
+    {                                                         \
+        auto p = std::make_shared<renderContext::vclass_t>(); \
+        p->callback = loadModule(name);                       \
+        p->title = title_i;                                   \
+        p->menu = dir;                                        \
+        p->input_types = std::set<std::string>(input);        \
+        addVClass(p);                                         \
+    }
+    addModule("输入输出", "文本输出", node_print, {std::string("字符串")});
+    addModule("输入输出", "文件选择", node_getFile, {});
+    addModule("输入输出", "导入midi至当前窗口", node_loadToWindow, {std::string("midi数据")});
+    addModule("文件处理", "midi加载", node_midiLoader, {std::string("字符串")});
+    addModule("文件处理", "wav加载", node_wavLoader, {std::string("字符串")});
 }
 
 void renderContext::vscript_t::addNodeAt(mgnr::vscript::port_output* p) {
     addNodeMode = true;
+    buildViewClass(p->type);
     addNodeAtPort = p;
     addNodeAtPort_window_pos = ImVec2(global->mouse_x, global->mouse_y);
 }
 void renderContext::vscript_t::onAddNode() {
     if (ImGui::BeginPopup("添加节点")) {
         global->checkfocus();
-        for (auto& menu : scriptClass) {
-            if (ImGui::BeginMenu(menu.first.c_str())) {
-                for (auto& it : menu.second) {
-                    if (ImGui::MenuItem(std::get<0>(it).c_str())) {
-                        auto p = std::get<1>(it)(this);
-                        if (p && p->input.size() == 1) {
-                            addLink(addNodeAtPort, p->input.at(0).get());
-                        }
-                    }
-                }
-                ImGui::EndMenu();
-            }
-        }
-
-        if (ImGui::BeginMenu("其他节点")) {
-            for (auto& it : scriptClass_other) {
-                if (ImGui::MenuItem(std::get<0>(it).c_str())) {
-                    auto p = std::get<1>(it)(this);
-                    if (p && p->input.size() == 1) {
-                        addLink(addNodeAtPort, p->input.at(0).get());
-                    }
+        for (auto& it : scriptClass_view) {
+            if (ImGui::MenuItem(it->title.c_str())) {
+                auto p = it->callback(this);
+                if (p && p->input.size() == 1) {
+                    addLink(addNodeAtPort, p->input.at(0).get());
                 }
             }
-            ImGui::EndMenu();
         }
         ImGui::End();
     }
@@ -129,21 +148,23 @@ void renderContext::vscript_t::onAddNode() {
             for (auto& menu : scriptClass) {
                 if (ImGui::BeginMenu(menu.first.c_str())) {
                     for (auto& it : menu.second) {
-                        if (ImGui::MenuItem(std::get<0>(it).c_str())) {
-                            std::get<1>(it)(this);
+                        if (ImGui::MenuItem(it->title.c_str())) {
+                            it->callback(this);
                         }
                     }
                     ImGui::EndMenu();
                 }
             }
 
-            if (ImGui::BeginMenu("其他节点")) {
-                for (auto& it : scriptClass_other) {
-                    if (ImGui::MenuItem(std::get<0>(it).c_str())) {
-                        std::get<1>(it)(this);
+            if (!scriptClass_other.empty()) {
+                if (ImGui::BeginMenu("其他节点")) {
+                    for (auto& it : scriptClass_other) {
+                        if (ImGui::MenuItem(it->title.c_str())) {
+                            it->callback(this);
+                        }
                     }
+                    ImGui::EndMenu();
                 }
-                ImGui::EndMenu();
             }
             ImGui::EndMenu();
         }
