@@ -3,6 +3,10 @@
 #include "sysmodule/loadToWindow.h"
 #include "sysmodule/midiloader.h"
 #include "sysmodule/print.h"
+
+#include "sysmodule/cepstrum.h"
+#include "sysmodule/spectrum.h"
+#include "sysmodule/wavFrameSampler.h"
 #include "sysmodule/wavloader.h"
 
 void renderContext::module_nodeEditor() {
@@ -97,6 +101,9 @@ void renderContext::vscript_init() {
     addModule("输入输出", "导入midi至当前窗口", node_loadToWindow, {std::string("midi数据")});
     addModule("文件处理", "midi加载", node_midiLoader, {std::string("字符串")});
     addModule("文件处理", "wav加载", node_wavLoader, {std::string("字符串")});
+    addModule("波形采样", "wav帧采样", node_wavFrameSampler, {std::string("wav数据")});
+    addModule("波形采样", "频谱生成", node_spectrum, {std::string("wav帧采样器")});
+    addModule("波形采样", "倒频谱生成", node_cepstrum, {std::string("频谱")});
 }
 
 void renderContext::vscript_t::addNodeAt(mgnr::vscript::port_output* p) {
