@@ -25,14 +25,14 @@ struct node_cepstrum : public mgnr::vscript::node_ui {
                     auto p = std::make_shared<cepstrumBuilder_t>(spec);
                     this->output[0]->send(p);
                 } else {
-                    global->scriptConsole.push_back("无法获取频谱");
+                    errors.push_back("无法获取频谱");
                 }
             } catch (std::bad_cast&) {
-                global->scriptConsole.push_back("生成倒频谱：类型转换错误");
+                errors.push_back("生成倒频谱：类型转换错误");
             } catch (std::runtime_error& e) {
-                global->scriptConsole.push_back(std::string("生成倒频谱：") + e.what());
+                errors.push_back(std::string("生成倒频谱：") + e.what());
             } catch (...) {
-                global->scriptConsole.push_back("生成倒频谱：未知错误");
+                errors.push_back("生成倒频谱：未知错误");
             }
         }
         input[0]->data.clear();

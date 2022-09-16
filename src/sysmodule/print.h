@@ -18,10 +18,10 @@ struct node_print : public mgnr::vscript::node_ui {
                 if (p != nullptr) {
                     global->scriptConsole.push_back(p->data);
                 } else {
-                    global->scriptConsole.push_back("类型不匹配");
+                    errors.push_back("类型不匹配");
                 }
             } catch (...) {
-                global->scriptConsole.push_back("节点输出失败");
+                errors.push_back("节点输出失败");
             }
         }
         input[0]->data.clear();

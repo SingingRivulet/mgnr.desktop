@@ -20,10 +20,10 @@ struct node_loadToWindow : public mgnr::vscript::node_ui {
                         global->drawing->addNote(it->begin, it->tone, it->duration, it->volume, it->info);
                     }
                 } else {
-                    global->scriptConsole.push_back("加载midi失败");
+                    errors.push_back("加载midi失败");
                 }
             } catch (...) {
-                global->scriptConsole.push_back("加载midi失败");
+                errors.push_back("加载midi失败");
             }
         }
         input[0]->data.clear();

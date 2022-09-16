@@ -130,6 +130,9 @@ void script::exec_begin() {
     for (auto& it : ports_output) {
         it.second->data = nullptr;
     }
+    for (auto& it : nodes) {
+        it.second->errors.clear();
+    }
 }
 
 void script::exec_loop() {

@@ -19,6 +19,22 @@ void script_ui::draw(bool* showing) {
 
             ImNodes::BeginNodeTitleBar();
             ImGui::TextUnformatted(node.second->name.c_str());
+            if (!node.second->errors.empty()) {
+                ImGui::SameLine();
+                auto errnum = node.second->errors.size();
+                if (errnum == 1) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "(!)");
+                } else {
+                    ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "(%d)", errnum);
+                }
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
+                    ImGui::BeginTooltip();
+                    for (auto& err : node.second->errors) {
+                        ImGui::TextUnformatted(err.c_str());
+                    }
+                    ImGui::EndTooltip();
+                }
+            }
             ImNodes::EndNodeTitleBar();
 
             for (auto& it : node.second->input) {

@@ -13,7 +13,7 @@ struct node_lua : public mgnr::vscript::node_ui {
                 auto res = lua_callfunction(global->lua_mainthread, global, this);
                 if (res) {
                     auto err = lua_tostring(global->lua_mainthread, -1);
-                    global->scriptConsole.push_back(std::string("脚本错误") + err);
+                    errors.push_back(std::string("脚本错误") + err);
                 }
             }
             lua_settop(global->lua_mainthread, 0);
@@ -27,7 +27,7 @@ struct node_lua : public mgnr::vscript::node_ui {
                 auto res = lua_callfunction(global->lua_mainthread, global, this);
                 if (res) {
                     auto err = lua_tostring(global->lua_mainthread, -1);
-                    global->scriptConsole.push_back(std::string("脚本错误") + err);
+                    errors.push_back(std::string("脚本错误") + err);
                 }
             }
             lua_settop(global->lua_mainthread, 0);
@@ -387,7 +387,7 @@ static int lua_vscript_print(lua_State* L) {
         return 0;
     }
     if (lua_isstring(L, 2)) {
-        self->global->scriptConsole.push_back(lua_tostring(L, 2));
+        self->errors.push_back(lua_tostring(L, 2));
     }
     return 0;
 }

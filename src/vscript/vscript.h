@@ -70,6 +70,7 @@ struct node {
     std::vector<std::unique_ptr<port_input>> input{};
     std::vector<std::unique_ptr<port_output>> output{};
     std::set<node*> affect{};
+    std::vector<std::string> errors{};
     virtual void exec() = 0;
     virtual void draw() = 0;
     virtual ~node();

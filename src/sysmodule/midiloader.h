@@ -26,12 +26,12 @@ struct node_midiLoader : public mgnr::vscript::node_ui {
                     p->loadMidi(path->data);
                     this->output[0]->send(p);
                 } else {
-                    global->scriptConsole.push_back("加载midi文件：获取路径失败");
+                    errors.push_back("加载midi文件：获取路径失败");
                 }
             } catch (std::bad_cast&) {
-                global->scriptConsole.push_back("加载midi文件：类型转换错误");
+                errors.push_back("加载midi文件：类型转换错误");
             } catch (...) {
-                global->scriptConsole.push_back("加载midi文件：未知错误");
+                errors.push_back("加载midi文件：未知错误");
             }
         }
         input[0]->data.clear();

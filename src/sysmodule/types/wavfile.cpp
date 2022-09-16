@@ -77,12 +77,24 @@ wav_input_t::wav_input_t(const std::string& path)
     : input(path.c_str()) {
 }
 
-bool wav_input_t::eof() {
-    return input.eof() != 0;
+int wav_input_t::getNumBits() {
+    return input.getNumBits();
 }
 
-int wav_input_t::read(float* buffer, int maxElems) {
-    return input.read(buffer, maxElems);
+void wav_input_t::read(const std::function<void(float*, int)>& callback, bool fix) {
+    int maxElems = getNumChannel() * blockSize;
+    auto pbuffer = wavBuffer_pool_f.get(maxElems);
+    auto buffer = pbuffer->buffer;
+    while (!input.eof()) {
+        int readlen = input.read(buffer, maxElems);
+        if (fix) {
+            for (int i = readlen; i < maxElems; ++i) {
+                buffer[i] = 0;
+            }
+        }
+        callback(buffer, readlen);
+    }
+    wavBuffer_pool_f.del(pbuffer);
 }
 
 int wav_input_t::getNumChannel() {
@@ -91,6 +103,10 @@ int wav_input_t::getNumChannel() {
 
 int wav_input_t::getSampleRate() {
     return input.getSampleRate();
+}
+
+int wav_input_t::getFrameSize() {
+    return blockSize;
 }
 
 wav_frame_t::wav_frame_t(int size, int channel) {
@@ -175,77 +191,174 @@ void spectrum_t::window(float* w) {
     }
 }
 
-bool frameSampler_t::eof() {
-    return input->eof();
-}
 int frameSampler_t::getNumChannel() {
     return input->getNumChannel();
 }
 int frameSampler_t::getSampleRate() {
     return input->getSampleRate();
 }
-void frameSampler_t::read(wav_frame_t* buffer) {
-    int numChannel = getNumChannel();
-    if (buffer->size > 0 && buffer->channel == numChannel) {
-        int maxlen = buffer->size * numChannel;
-        float fbuffer[maxlen];
-        int readlen = input->read(fbuffer, maxlen);
-        for (int i = readlen; i < maxlen; ++i) {
-            fbuffer[i] = 0;
-        }
-        for (int channel_id = 0; channel_id < numChannel; ++channel_id) {
-            auto ptr_self = (*buffer)[channel_id];
-            for (int i = 0; i < buffer->size; ++i) {
-                ptr_self[i] = fbuffer[i * numChannel + channel_id];
-            }
-        }
-    }
+int frameSampler_t::getFrameSize() {
+    return input->getFrameSize() * overlap;
 }
-void frameSampler_t::read(spectrum_t* buffer) {
+int frameSampler_t::getNumBits() {
+    return input->getNumBits();
+}
+void frameSampler_t::read(const std::function<void(wav_frame_t&)>& callback) {
     int numChannel = getNumChannel();
-    if (buffer->size > 0 && buffer->channel == numChannel) {
-        int maxlen = buffer->size * numChannel;
-        float fbuffer[maxlen];
-        int readlen = input->read(fbuffer, maxlen);
-        for (int i = readlen; i < maxlen; ++i) {
-            fbuffer[i] = 0;
-        }
-        for (int channel_id = 0; channel_id < numChannel; ++channel_id) {
-            auto ptr_self = (*buffer)[channel_id];
-            for (int i = 0; i < buffer->size; ++i) {
-                ptr_self[i].r = fbuffer[i * numChannel + channel_id];
-                ptr_self[i].i = 0;
-            }
-        }
+    std::list<std::unique_ptr<wav_frame_t>> buffer;
+    int singleFrameSize = input->getFrameSize();
+    for (int i = 0; i < overlap; ++i) {
+        buffer.push_back(
+            std::move(
+                std::unique_ptr<wav_frame_t>(
+                    new wav_frame_t(singleFrameSize, numChannel))));  //采用未重叠的长度
     }
+    wav_frame_t obuffer(getFrameSize(), numChannel);  //采用已重叠的长度
+    input->read([&](float* fbuffer, int size) {
+        //循环缓冲
+        auto it = buffer.begin();
+        std::unique_ptr<wav_frame_t> tmp = std::move(*it);
+        buffer.pop_front();
+        memcpy(tmp->buffer, fbuffer, sizeof(float) * size);
+        buffer.push_back(std::move(tmp));
+        //重组
+        int blockId = 0;
+        for (auto& buffer_it : buffer) {
+            for (int channel_id = 0; channel_id < numChannel; ++channel_id) {
+                auto ptr_self = obuffer[channel_id];
+                for (int i = 0; i < buffer_it->size; ++i) {
+                    ptr_self[i + blockId * buffer_it->size] = buffer_it->buffer[i * numChannel + channel_id];
+                }
+            }
+            ++blockId;
+        }
+        callback(obuffer);
+    });
+}
+void frameSampler_t::read(const std::function<void(spectrum_t&)>& callback) {
+    int numChannel = getNumChannel();
+    std::list<std::unique_ptr<wav_frame_t>> buffer;
+    int singleFrameSize = input->getFrameSize();
+    for (int i = 0; i < overlap; ++i) {
+        buffer.push_back(
+            std::move(
+                std::unique_ptr<wav_frame_t>(
+                    new wav_frame_t(singleFrameSize, numChannel))));  //采用未重叠的长度
+    }
+    spectrum_t obuffer(getFrameSize(), numChannel);  //采用已重叠的长度
+    input->read([&](float* fbuffer, int size) {
+        //循环缓冲
+        auto it = buffer.begin();
+        std::unique_ptr<wav_frame_t> tmp = std::move(*it);
+        buffer.pop_front();
+        memcpy(tmp->buffer, fbuffer, sizeof(float) * size);
+        buffer.push_back(std::move(tmp));
+        //重组
+        int blockId = 0;
+        for (auto& buffer_it : buffer) {
+            for (int channel_id = 0; channel_id < numChannel; ++channel_id) {
+                auto ptr_self = obuffer[channel_id];
+                for (int i = 0; i < buffer_it->size; ++i) {
+                    ptr_self[i + blockId * buffer_it->size].r = buffer_it->buffer[i * numChannel + channel_id];
+                    ptr_self[i + blockId * buffer_it->size].i = 0;
+                }
+            }
+            ++blockId;
+        }
+        callback(obuffer);
+    });
 }
 
-bool spectrumBuilder_t::eof() {
-    return input->eof();
+int frameWindow_t::getNumChannel() {
+    return input->getNumChannel();
 }
+int frameWindow_t::getSampleRate() {
+    return input->getSampleRate();
+}
+int frameWindow_t::getFrameSize() {
+    return input->getFrameSize();
+}
+int frameWindow_t::getNumBits() {
+    return input->getNumBits();
+}
+void frameWindow_t::read(const std::function<void(wav_frame_t&)>& callback) {
+    int numChannel = getNumChannel();
+    int len = input->getFrameSize();
+    auto window = wavBuffer_pool_f.get(len);
+    //构建窗函数
+    sinrivUtils::waveWindow::create(window->buffer, len, windowType);
+    wav_frame_t buffer(len, numChannel);
+    input->read([&](const wav_frame_t& w) {
+        for (int channel_id = 0; channel_id < numChannel; ++channel_id) {
+            auto ptr_buffer = buffer[channel_id];
+            auto ptr_wave = w[channel_id];
+            for (int i = 0; i < buffer.size; ++i) {
+                ptr_buffer[i] = window->buffer[i] * ptr_wave[i];
+            }
+        }
+        callback(buffer);
+    });
+    wavBuffer_pool_f.del(window);
+}
+void frameWindow_t::read(const std::function<void(spectrum_t&)>& callback) {
+    int numChannel = getNumChannel();
+    int len = input->getFrameSize();
+    auto window = wavBuffer_pool_f.get(len);
+    //构建窗函数
+    sinrivUtils::waveWindow::create(window->buffer, len, windowType);
+    spectrum_t buffer(input->getFrameSize(), numChannel);
+    input->read([&](const spectrum_t& w) {
+        for (int channel_id = 0; channel_id < numChannel; ++channel_id) {
+            auto ptr_buffer = buffer[channel_id];
+            auto ptr_wave = w[channel_id];
+            for (int i = 0; i < buffer.size; ++i) {
+                ptr_buffer[i].r = window->buffer[i] * ptr_wave[i].r;
+                ptr_buffer[i].i = window->buffer[i] * ptr_wave[i].i;
+            }
+        }
+        callback(buffer);
+    });
+    wavBuffer_pool_f.del(window);
+}
+
 int spectrumBuilder_t::getNumChannel() {
     return input->getNumChannel();
 }
 int spectrumBuilder_t::getSampleRate() {
     return input->getSampleRate();
 }
-void spectrumBuilder_t::read(spectrum_t* buffer) {
-    spectrum_t obuffer(buffer->size, buffer->channel);
-    input->read(&obuffer);
-    obuffer.FFT(buffer);
+int spectrumBuilder_t::getFrameSize() {
+    return input->getFrameSize();
+}
+int spectrumBuilder_t::getNumBits() {
+    return input->getNumBits();
+}
+void spectrumBuilder_t::read(const std::function<void(spectrum_t&)>& callback) {
+    int numChannel = getNumChannel();
+    spectrum_t buffer(input->getFrameSize(), numChannel);
+    input->read([&](spectrum_t& obuffer) {
+        obuffer.FFT(&buffer);
+        callback(buffer);
+    });
 }
 
-bool cepstrumBuilder_t::eof() {
-    return input->eof();
-}
 int cepstrumBuilder_t::getNumChannel() {
     return input->getNumChannel();
 }
 int cepstrumBuilder_t::getSampleRate() {
     return input->getSampleRate();
 }
-void cepstrumBuilder_t::read(wav_frame_t* buffer) {
-    spectrum_t obuffer(buffer->size, buffer->channel);
-    input->read(&obuffer);
-    obuffer.buildCepstrum(buffer);
+int cepstrumBuilder_t::getFrameSize() {
+    return input->getFrameSize();
+}
+int cepstrumBuilder_t::getNumBits() {
+    return input->getNumBits();
+}
+void cepstrumBuilder_t::read(const std::function<void(wav_frame_t&)>& callback) {
+    int numChannel = getNumChannel();
+    wav_frame_t buffer(input->getFrameSize(), numChannel);
+    input->read([&](spectrum_t& obuffer) {
+        obuffer.buildCepstrum(&buffer);
+        callback(buffer);
+    });
 }

@@ -1,22 +1,27 @@
 #pragma once
+#include <functional>
 #include <memory>
 #include "WavFile.h"
 #include "freq.hpp"
 #include "view/mgenner.h"
+#include "waveWindow.h"
 
 struct audioStream_t : public mgnr::vscript::value {
-    virtual bool eof() = 0;
     virtual int getNumChannel() = 0;
     virtual int getSampleRate() = 0;
+    virtual int getNumBits() = 0;
+    virtual int getFrameSize() = 0;
 };
 
 struct wav_input_t : public audioStream_t {
     WavInFile input;
+    int blockSize = 256;
     wav_input_t(const std::string& path);
-    bool eof() override;
-    virtual int read(float* buffer, int maxElems);
+    virtual void read(const std::function<void(float*, int)>& callback, bool fix = true);
     int getNumChannel() override;
     int getSampleRate() override;
+    int getNumBits() override;
+    int getFrameSize() override;
 };
 
 //波形采样
@@ -55,27 +60,49 @@ struct spectrum_t : public mgnr::vscript::value {
     void window(float* w);
 };
 
-struct frameSampler_t : public audioStream_t {
+struct frameStream_t : public audioStream_t {
+    virtual void read(const std::function<void(wav_frame_t&)>& callback) = 0;
+    virtual void read(const std::function<void(spectrum_t&)>& callback) = 0;
+};
+
+struct frameSampler_t : public frameStream_t {
     std::shared_ptr<wav_input_t> input;
+    int overlap = 2;
     inline frameSampler_t(std::shared_ptr<wav_input_t> input) {
         this->input = input;
     }
-    bool eof() override;
     int getNumChannel() override;
     int getSampleRate() override;
-    virtual void read(wav_frame_t* buffer);
-    virtual void read(spectrum_t* buffer);
+    int getFrameSize() override;
+    int getNumBits() override;
+    virtual void read(const std::function<void(wav_frame_t&)>& callback);
+    virtual void read(const std::function<void(spectrum_t&)>& callback);
+};
+
+struct frameWindow_t : public frameStream_t {
+    sinrivUtils::waveWindow::SoundWindowType windowType = sinrivUtils::waveWindow::SOUND_WINDOW_HANNING;
+    std::shared_ptr<frameStream_t> input;
+    inline frameWindow_t(std::shared_ptr<frameStream_t> input) {
+        this->input = input;
+    }
+    int getNumChannel() override;
+    int getSampleRate() override;
+    int getFrameSize() override;
+    int getNumBits() override;
+    virtual void read(const std::function<void(wav_frame_t&)>& callback);
+    virtual void read(const std::function<void(spectrum_t&)>& callback);
 };
 
 struct spectrumBuilder_t : public audioStream_t {
-    std::shared_ptr<frameSampler_t> input;
-    inline spectrumBuilder_t(std::shared_ptr<frameSampler_t> input) {
+    std::shared_ptr<frameStream_t> input;
+    inline spectrumBuilder_t(std::shared_ptr<frameStream_t> input) {
         this->input = input;
     }
-    bool eof() override;
     int getNumChannel() override;
     int getSampleRate() override;
-    virtual void read(spectrum_t* buffer);
+    int getFrameSize() override;
+    int getNumBits() override;
+    virtual void read(const std::function<void(spectrum_t&)>& callback);
 };
 
 struct cepstrumBuilder_t : public audioStream_t {
@@ -83,8 +110,9 @@ struct cepstrumBuilder_t : public audioStream_t {
     inline cepstrumBuilder_t(std::shared_ptr<spectrumBuilder_t> input) {
         this->input = input;
     }
-    bool eof() override;
     int getNumChannel() override;
     int getSampleRate() override;
-    virtual void read(wav_frame_t* buffer);
+    int getFrameSize() override;
+    int getNumBits() override;
+    virtual void read(const std::function<void(wav_frame_t&)>& callback);
 };
