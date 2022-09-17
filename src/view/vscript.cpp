@@ -6,6 +6,7 @@
 
 #include "sysmodule/cepstrum.h"
 #include "sysmodule/spectrum.h"
+#include "sysmodule/spectrumViewer.h"
 #include "sysmodule/wavFrameSampler.h"
 #include "sysmodule/wavloader.h"
 
@@ -20,7 +21,7 @@ void renderContext::module_nodeEditor() {
         ImGui::SetNextWindowPos(ImVec2(847 + 9, 55), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(387, 560), ImGuiCond_FirstUseEver);
         if (ImGui::Begin("节点输出")) {
-            ImGui::LogToClipboard();
+            //ImGui::LogToClipboard();
             for (auto& it : scriptConsole) {
                 ImGui::TextWrapped("%s", it.c_str());
             }
@@ -96,6 +97,19 @@ void renderContext::vscript_init() {
         p->input_types = std::set<std::string>(input);        \
         addVClass(p);                                         \
     }
+
+#define addModule_begin(dir, title_i, name)                   \
+    {                                                         \
+        auto p = std::make_shared<renderContext::vclass_t>(); \
+        p->callback = loadModule(name);                       \
+        p->title = title_i;                                   \
+        p->menu = dir;                                        \
+        p->input_types = std::set<std::string>();
+#define addModule_setInputType(name) \
+    p->input_types.insert(name);
+#define addModule_end() \
+    addVClass(p);       \
+    }
     addModule("输入输出", "文本输出", node_print, {std::string("字符串")});
     addModule("输入输出", "导入midi至当前窗口", node_loadToWindow, {std::string("midi数据")});
     addModule("文件处理", "文件选择", node_getFile, {});
@@ -105,6 +119,10 @@ void renderContext::vscript_init() {
     addModule("波形采样", "波形帧加窗", node_wavFrameWindow, {std::string("波形帧数据流")});
     addModule("波形采样", "频谱生成", node_spectrum, {std::string("波形帧数据流")});
     addModule("波形采样", "倒频谱生成", node_cepstrum, {std::string("频谱")});
+    addModule_begin("波形采样", "频谱查看器", node_spectrumViewer);
+    addModule_setInputType("频谱");
+    addModule_setInputType("倒频谱");
+    addModule_end();
 }
 
 void renderContext::vscript_t::addNodeAt(mgnr::vscript::port_output* p) {

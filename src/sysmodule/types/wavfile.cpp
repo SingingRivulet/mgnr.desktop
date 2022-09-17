@@ -140,6 +140,8 @@ void spectrum_t::FFT(spectrum_t* w) const {
             auto ptr_out = (*w)[channel_id];
             sinrivUtils::FFT(ptr_in, ptr_out, size);
         }
+    } else {
+        throw std::runtime_error("spectrum_t：FFT：长度不匹配");
     }
 }
 
@@ -150,6 +152,8 @@ void spectrum_t::IFFT(spectrum_t* w) const {
             auto ptr_out = (*w)[channel_id];
             sinrivUtils::IFFT(ptr_in, ptr_out, size);
         }
+    } else {
+        throw std::runtime_error("spectrum_t：IFFT：长度不匹配");
     }
 }
 
@@ -178,6 +182,8 @@ void spectrum_t::buildCepstrum(wav_frame_t* w) const {
                     buffer_out[i].i * buffer_out[i].i);
             }
         }
+    } else {
+        throw std::runtime_error("spectrum_t：构建倒频谱：长度不匹配");
     }
 }
 
