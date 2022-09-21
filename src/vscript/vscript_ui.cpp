@@ -6,7 +6,7 @@ void node_ui::draw() {
 
 void script_ui::draw(bool* showing) {
     focused = false;
-    if (ImGui::Begin(title.c_str(), showing)) {
+    if (ImGui::Begin(title.c_str(), showing, ImGuiWindowFlags_NoBringToFrontOnFocus)) {
         ImNodes::BeginNodeEditor();
 
         //添加节点

@@ -159,7 +159,7 @@ constexpr Uint32 Rmask = 0x00FF0000;
 constexpr Uint32 Gmask = 0x0000FF00;
 constexpr Uint32 Bmask = 0x000000FF;
 
-struct renderer {
+struct fullRenderer {
     std::shared_ptr<LOD> layout_show;
     std::shared_ptr<LOD> layout_draw;
     viewPort_t viewPort;
@@ -167,21 +167,26 @@ struct renderer {
     SDL_Renderer* sdlrenderer;
 
     float maxElement;
+    float minElement;
     std::vector<float> data;
     int width = 0;
     int height = 0;
 
     bool needUpdate = true;
 
-    inline renderer() {
+    inline fullRenderer() {
         viewPort.scale = 1;
         //printf("spectrum:viewPort.scale=%f\n", viewPort.scale);
     }
     inline void updateDate() {
-        maxElement = 1;
+        maxElement = -INFINITY;
+        minElement = INFINITY;
         for (auto& it : data) {
             if (it > maxElement) {
                 maxElement = it;
+            }
+            if (it < minElement) {
+                minElement = it;
             }
         }
     }
