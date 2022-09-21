@@ -94,6 +94,7 @@ void wav_input_t::read(const std::function<void(float*, int)>& callback, bool fi
         }
         callback(buffer, readlen);
     }
+    input.rewind();
     wavBuffer_pool_f.del(pbuffer);
 }
 

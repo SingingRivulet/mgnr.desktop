@@ -95,13 +95,19 @@ inline bool getRenderPos(viewPort_t& viewPort,
     //         = (chunk.pos * lod.scale * chunkSize - viewPort.lookAtBegin)/viewPort.scale
     //渲染尺寸  = 真实尺寸/viewPort.scale
     //         = chunkSize * lod.scale/viewPort.scale
-    int d_beginX = (chunk.pos.x * lod.scale * chunkSize - viewPort.lookAtBegin.x) / viewPort.scale;
-    int d_beginY = (chunk.pos.y * lod.scale * chunkSize - viewPort.lookAtBegin.y) / viewPort.scale;
-    int d_sizeX = chunkSize * lod.scale / viewPort.scale;
-    int d_sizeY = chunkSize * lod.scale / viewPort.scale;
+    int d_beginX_o = (chunk.pos.x * lod.scale * chunkSize - viewPort.lookAtBegin.x);
+    int d_beginY_o = (chunk.pos.y * lod.scale * chunkSize - viewPort.lookAtBegin.y);
+    int d_beginX = d_beginX_o / viewPort.scale;
+    int d_beginY = d_beginY_o / viewPort.scale;
+    int d_sizeX_o = chunkSize * lod.scale;
+    int d_sizeY_o = chunkSize * lod.scale;
+    int d_sizeX = d_sizeX_o / viewPort.scale;
+    int d_sizeY = d_sizeY_o / viewPort.scale;
 
-    int d_endX = d_beginX + d_sizeX;
-    int d_endY = d_beginY + d_sizeY;
+    //printf("spectrum:");
+
+    int d_endX = (d_beginX_o + d_sizeX_o) / viewPort.scale;
+    int d_endY = (d_beginY_o + d_sizeY_o) / viewPort.scale;
 
     float s_beginX = 0;
     float s_beginY = 0;
@@ -251,10 +257,16 @@ struct fullRenderer {
         if (layout_draw != nullptr) {
             ++updateFlag;
             viewPort.updateLookAt();
-            int fx = std::floor((viewPort.lookAtBegin.x * viewPort.scale) / (layout_draw->scale * chunkSize));
-            int fy = std::floor((viewPort.lookAtBegin.y * viewPort.scale) / (layout_draw->scale * chunkSize));
-            int ex = std::ceil((viewPort.lookAtEnd.x * viewPort.scale) / (layout_draw->scale * chunkSize));
-            int ey = std::ceil((viewPort.lookAtEnd.y * viewPort.scale) / (layout_draw->scale * chunkSize));
+            //公式推导：
+            //chunk.drawPos = (chunk.pos * chunk.scale * chunkSize - viewPort.lookAtBegin) / viewPort.scale
+            //求 chunk.pos
+            //chunk.pos = (chunk.drawPos * viewPort.scale + viewPort.lookAtBegin)/(chunk.scale * chunkSize)
+            //chunk.drawPos取0和viewPort.windowSize.x
+            //chunk.scale为layout_draw->scale
+            int fx = std::floor((0 * viewPort.scale + viewPort.lookAtBegin.x) / (chunkSize * layout_draw->scale));
+            int fy = std::floor((0 * viewPort.scale + viewPort.lookAtBegin.y) / (chunkSize * layout_draw->scale));
+            int ex = std::ceil((viewPort.windowSize.x * viewPort.scale + viewPort.lookAtBegin.x) / (chunkSize * layout_draw->scale));
+            int ey = std::ceil((viewPort.windowSize.y * viewPort.scale + viewPort.lookAtBegin.y) / (chunkSize * layout_draw->scale));
             //printf("spectrum:layout_draw->scale=%d viewPort.scale=%f\n", layout_draw->scale, viewPort.scale);
             //printf("spectrum:viewPort.lookAtBegin=(%d,%d)\n",
             //       viewPort.lookAtBegin.x,
@@ -311,7 +323,7 @@ struct fullRenderer {
                 data[(j * chunkSize + i) * 4] = getPixel(px, py);
                 data[(j * chunkSize + i) * 4 + 1] = getPixel(px, py);
                 data[(j * chunkSize + i) * 4 + 2] = getPixel(px, py);
-                data[(j * chunkSize + i) * 4 + 3] = getPixel(px, py);
+                data[(j * chunkSize + i) * 4 + 3] = 0xff;
             }
         }
 

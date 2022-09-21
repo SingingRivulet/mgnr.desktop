@@ -8,7 +8,9 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
     renderContext* global;
     mgnr::spectrum::fullRenderer fullRenderer;
     mgnr::spectrum::stepRenderer stepRenderer;
+    int windowId;
     node_spectrumViewer(renderContext* global) {
+        windowId = time(0);
         fullRenderer.sdlrenderer = global->renderer;
         stepRenderer.parent = &fullRenderer;
 
@@ -22,13 +24,19 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
     }
     bool showSpec = false;
     int specCursor = -1;
+    bool fullSpecWindowMoveable = true;
     void draw() override {
         char title[128];
         if (showSpec) {
             ImGui::SetNextWindowSize(ImVec2(800, 590), ImGuiCond_FirstUseEver);
-            snprintf(title, sizeof(title), "频谱显示##%d", this->id);
-            if (ImGui::Begin(title, &showSpec)) {
+            snprintf(title, sizeof(title), "频谱显示##%d", this->windowId);
+            int windowFlag = 0;
+            if (!fullSpecWindowMoveable) {
+                windowFlag |= ImGuiWindowFlags_NoMove;
+            }
+            if (ImGui::Begin(title, &showSpec, windowFlag)) {
                 global->checkfocus();
+                //ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
                 ImGuiIO& io = ImGui::GetIO();
                 //ImGui::SetWindowFocus();
                 auto pos = ImGui::GetWindowPos();
@@ -42,8 +50,10 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                     fullRenderer.needUpdate = true;
                 }
                 ImVec2 p0 = ImGui::GetCursorScreenPos();
+                ImVec2 pend = p0 + ImVec2(w, h);
                 ImDrawList* draw_list = ImGui::GetWindowDrawList();
-                draw_list->AddRectFilled(p0, p0 + ImVec2(w, h), ImColor(ImVec4(0, 0, 0, 1.0f)));
+                ImVec2 canvas_sz = ImGui::GetContentRegionAvail();
+                draw_list->AddRectFilled(p0, pend, ImColor(ImVec4(0, 0, 0, 1.0f)));
                 fullRenderer.render();
                 if (specCursor > 0) {
                     static ImVec4 colf = ImVec4(0.0f, 1.0f, 0.4f, 1.0f);
@@ -63,33 +73,42 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                         }
                         fullRenderer.needUpdate = true;
                     }
-                    if (ImGui::IsMouseDown(2)) {
-                        fullRenderer.viewPort.setLookAt(
-                            mgnr::spectrum::vec2<int>(
-                                fullRenderer.viewPort.lookAtBegin.x - io.MouseDelta.x * fullRenderer.viewPort.scale,
-                                fullRenderer.viewPort.lookAtBegin.y - io.MouseDelta.y * fullRenderer.viewPort.scale));
-                        fullRenderer.needUpdate = true;
-                    }
-                    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0)) {
-                        auto mpos = ImGui::GetMousePos();
-                        auto wpos = mpos - p0;
-                        auto spos = wpos.x * fullRenderer.viewPort.scale + fullRenderer.viewPort.lookAtBegin.x;
-                        specCursor = spos;
-                        stepRenderer.get(specCursor);
+                    if (ImGui::IsMouseHoveringRect(p0, pend)) {
+                        fullSpecWindowMoveable = false;
+                        if (ImGui::IsWindowHovered()) {
+                            if (ImGui::IsMouseDown(2)) {
+                                fullRenderer.viewPort.setLookAt(
+                                    mgnr::spectrum::vec2<int>(
+                                        fullRenderer.viewPort.lookAtBegin.x - io.MouseDelta.x * fullRenderer.viewPort.scale,
+                                        fullRenderer.viewPort.lookAtBegin.y - io.MouseDelta.y * fullRenderer.viewPort.scale));
+                                fullRenderer.needUpdate = true;
+                            }
+                            if (ImGui::IsMouseDown(0)) {
+                                auto mpos = ImGui::GetMousePos();
+                                auto wpos = mpos - p0;
+                                auto spos = wpos.x * fullRenderer.viewPort.scale + fullRenderer.viewPort.lookAtBegin.x;
+                                specCursor = spos;
+                                stepRenderer.get(specCursor);
+                            }
+                        }
+                    } else {
+                        fullSpecWindowMoveable = true;
                     }
                 }
             }
             ImGui::End();
             if (specCursor > 0) {
                 ImGui::SetNextWindowSize(ImVec2(925, 500), ImGuiCond_FirstUseEver);
-                snprintf(title, sizeof(title), "频谱显示(时刻)##%d", this->id);
+                snprintf(title, sizeof(title), "频谱显示(时刻)##%d", this->windowId,
+                         ImGuiWindowFlags_NoFocusOnAppearing);
                 if (ImGui::Begin(title)) {
                     global->checkfocus();
+                    //ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
                     ImVec2 p0 = ImGui::GetCursorScreenPos() + ImVec2(20, 20);
                     int w = ImGui::GetWindowWidth() - 40;
-                    int h = ImGui::GetWindowHeight() - 40;
+                    int h = ImGui::GetWindowHeight() - 60;
                     ImDrawList* draw_list = ImGui::GetWindowDrawList();
-                    draw_list->AddRectFilled(p0, p0 + ImVec2(w, h), ImColor(ImVec4(0, 0, 0, 1.0f)));
+                    draw_list->AddRectFilled(p0, p0 + ImVec2(w, h), ImColor(ImVec4(0, 0, 0.2, 1.0f)));
                     auto col = ImColor(ImVec4(1, 1, 1, 1.0f));
 
                     ImVec2 last(p0.x, p0.y + h);
@@ -122,6 +141,7 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
         mgnr::vscript::node_ui::draw();
     }
     void exec() override {
+        showSpec = false;
         for (auto& it : input[0]->data) {
             try {
                 auto ceps = std::dynamic_pointer_cast<cepstrumBuilder_t>(it);
