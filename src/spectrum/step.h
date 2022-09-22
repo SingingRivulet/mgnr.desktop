@@ -4,7 +4,8 @@ namespace mgnr::spectrum {
 
 struct stepRenderer {
     fullRenderer* parent;
-    std::vector<std::pair<float, float>> points;
+    int len;
+    std::vector<float> points;
     inline void get(int step) {
         points.clear();
         if (parent && step >= 0 && step < parent->width) {
@@ -12,14 +13,14 @@ struct stepRenderer {
             if (delta == 0) {
                 delta = 1;
             }
+            auto block = parent->data[step];
+            len = parent->height;
             for (int i = 0; i < parent->height; ++i) {
-                auto value = parent->data[step * parent->height + i];
+                auto value = block[i];
 
                 auto h = 1. - ((value - parent->minElement) / delta);
 
-                points.push_back(
-                    std::make_pair(
-                        ((float)i) / parent->height, h));
+                points.push_back(h);
             }
         }
     }

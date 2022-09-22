@@ -53,7 +53,7 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                 ImVec2 pend = p0 + ImVec2(w, h);
                 ImDrawList* draw_list = ImGui::GetWindowDrawList();
                 ImVec2 canvas_sz = ImGui::GetContentRegionAvail();
-                draw_list->AddRectFilled(p0, pend, ImColor(ImVec4(0, 0, 0, 1.0f)));
+                draw_list->AddRectFilled(p0, pend, ImColor(ImVec4(0.1, 0.1, 0.1, 1.0f)));
                 fullRenderer.render();
                 if (specCursor > 0) {
                     static ImVec4 colf = ImVec4(0.0f, 1.0f, 0.4f, 1.0f);
@@ -115,11 +115,17 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
 
                     bool pointMode = ((((float)w) / fullRenderer.height) <= 1);
 
-                    for (auto& it : stepRenderer.points) {
-                        ImVec2 pos(it.first * w, it.second * h);
-                        if (pointMode) {
-                            draw_list->AddRectFilled(p0 + pos, p0 + pos + ImVec2(1, 1), col);
-                        } else {
+                    if (pointMode) {
+                        for (int i = 0; i < w; ++i) {
+                            int id = (i * stepRenderer.len) / w;
+                            ImVec2 pos(i, stepRenderer.points[id] * h);
+                            pos += p0;
+                            draw_list->AddLine(last, pos, col);
+                            last = pos;
+                        }
+                    } else {
+                        for (int i = 0; i < stepRenderer.len; ++i) {
+                            ImVec2 pos((i * w) / stepRenderer.len, stepRenderer.points[i] * h);
                             pos += p0;
                             draw_list->AddLine(last, pos, col);
                             last = pos;
@@ -149,19 +155,26 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                     fullRenderer.height = 0;
                     fullRenderer.width = 0;
                     fullRenderer.data.clear();
+                    int numFrame = 0;
+                    char buf[256];
                     ceps->read([&](const wav_frame_t& w) {
                         if (w.channel >= 1) {
                             auto data = w[0];
                             fullRenderer.height = w.size;
                             ++fullRenderer.width;
+                            std::vector<float> block;
+                            block.resize(w.size);
                             for (int i = 0; i < w.size; ++i) {
                                 auto value = data[i];
-                                fullRenderer.data.push_back(value);
+                                block[i] = value;
                             }
+                            fullRenderer.data.push_back(std::move(block));
                         }
+                        ++numFrame;
                     });
                     fullRenderer.updateDate();
-                    global->scriptConsole.push_back("频谱已更新");
+                    snprintf(buf, sizeof(buf), "频谱已更新（%d帧）", numFrame);
+                    global->scriptConsole.push_back(buf);
                     break;
                 } else {
                     auto spec = std::dynamic_pointer_cast<spectrumBuilder_t>(it);
@@ -169,20 +182,28 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                         fullRenderer.height = 0;
                         fullRenderer.width = 0;
                         fullRenderer.data.clear();
+                        int numFrame = 0;
+                        char buf[256];
                         spec->read([&](const spectrum_t& w) {
                             if (w.channel >= 1) {
                                 auto data = w[0];
                                 int len = w.size / 2;
                                 fullRenderer.height = len;
                                 ++fullRenderer.width;
+                                std::vector<float> block;
+                                block.resize(len);
                                 for (int i = 0; i < len; ++i) {
                                     auto value = sqrt(data[i].r * data[i].r + data[i].i * data[i].i);
-                                    fullRenderer.data.push_back(value);
+                                    block[i] = value;
+                                    ;
                                 }
+                                fullRenderer.data.push_back(std::move(block));
                             }
+                            ++numFrame;
                         });
                         fullRenderer.updateDate();
-                        global->scriptConsole.push_back("频谱已更新");
+                        snprintf(buf, sizeof(buf), "频谱已更新（%d帧）", numFrame);
+                        global->scriptConsole.push_back(buf);
                         break;
                     } else {
                         errors.push_back("获取频谱：数据无法识别");

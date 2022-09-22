@@ -174,7 +174,8 @@ struct fullRenderer {
 
     float maxElement;
     float minElement;
-    std::vector<float> data;
+    std::vector<std::vector<float>> data;
+    std::vector<float> mesh_x, mesh_y;
     int width = 0;
     int height = 0;
 
@@ -187,12 +188,14 @@ struct fullRenderer {
     inline void updateDate() {
         maxElement = -INFINITY;
         minElement = INFINITY;
-        for (auto& it : data) {
-            if (it > maxElement) {
-                maxElement = it;
-            }
-            if (it < minElement) {
-                minElement = it;
+        for (auto& step : data) {
+            for (auto& it : step) {
+                if (it > maxElement) {
+                    maxElement = it;
+                }
+                if (it < minElement) {
+                    minElement = it;
+                }
             }
         }
     }
@@ -225,6 +228,35 @@ struct fullRenderer {
             for (auto& it : layout_show->chunks) {
                 it.second->visible = getRenderPos(viewPort, *layout_show, *it.second);
             }
+            //网格
+            {
+                mesh_x.clear();
+                int meshDelta = layout_show->scale * 32;
+                int pos = ((int)(viewPort.lookAtBegin.x / meshDelta)) * meshDelta;
+                printf("spectrum:viewPort.lookAtBegin.x=%d pos=%d\n", viewPort.lookAtBegin.x, pos);
+                for (;; pos += meshDelta) {
+                    int vpos = (pos - viewPort.lookAtBegin.x) / viewPort.scale;
+                    if (vpos > viewPort.windowSize.x) {
+                        break;
+                    }
+                    if (vpos > 0) {
+                        mesh_x.push_back(vpos);
+                    }
+                }
+
+                mesh_y.clear();
+                meshDelta = layout_show->scale * 32;
+                pos = ((int)(viewPort.lookAtBegin.y / meshDelta)) * meshDelta;
+                for (;; pos += meshDelta) {
+                    int vpos = (pos - viewPort.lookAtBegin.y) / viewPort.scale;
+                    if (vpos > viewPort.windowSize.y) {
+                        break;
+                    }
+                    if (vpos > 0) {
+                        mesh_y.push_back(vpos);
+                    }
+                }
+            }
         }
     }
     inline void render() {
@@ -250,6 +282,14 @@ struct fullRenderer {
                         ImVec2(it.second->srcPosMin.x, it.second->srcPosMin.y),
                         ImVec2(it.second->srcPosMax.x, it.second->srcPosMax.y));
                 }
+            }
+            static ImVec4 colf = ImVec4(0.5f, 0.5f, 0.5f, 0.5f);
+            const static ImU32 col = ImColor(colf);
+            for (auto it : mesh_x) {
+                draw_list->AddLine(p0 + ImVec2(it, 0), p0 + ImVec2(it, viewPort.windowSize.y), col);
+            }
+            for (auto it : mesh_y) {
+                draw_list->AddLine(p0 + ImVec2(0, it), p0 + ImVec2(viewPort.windowSize.x, it), col);
             }
         }
     }
@@ -320,10 +360,11 @@ struct fullRenderer {
             for (int j = 0; j < chunkSize; ++j) {
                 int py = fy + j * delta;
                 //像素点的坐标为(x,y)
-                data[(j * chunkSize + i) * 4] = getPixel(px, py);
-                data[(j * chunkSize + i) * 4 + 1] = getPixel(px, py);
-                data[(j * chunkSize + i) * 4 + 2] = getPixel(px, py);
-                data[(j * chunkSize + i) * 4 + 3] = 0xff;
+                getPixel(px, py,
+                         &data[(j * chunkSize + i) * 4 + 3],
+                         &data[(j * chunkSize + i) * 4 + 2],
+                         &data[(j * chunkSize + i) * 4 + 1],
+                         &data[(j * chunkSize + i) * 4 + 0]);
             }
         }
 
@@ -337,16 +378,21 @@ struct fullRenderer {
         layout_draw->chunks[std::make_pair(x, y)] = std::move(ptr);
         SDL_FreeSurface(surface);
     }
-    inline Uint8 getPixel(int x, int y) {
+    inline void getPixel(int x, int y, Uint8* A, Uint8* R, Uint8* G, Uint8* B) {
+        *A = 0xff;
         if (x < 0 || y < 0 || x >= width || y >= height) {
-            //printf("spectrum:getPixel(%d,%d)\n",x,y);
-            return 0;
+            *R = 26;
+            *G = 26;
+            *B = 26;
+            return;
         }
-        auto res = (data[x * height + (height - y - 1)] / maxElement) * 255;
+        auto res = (data[x][height - y - 1] / maxElement) * 255;
         res = std::max(res, 0.f);
         res = std::min(res, 255.f);
         //printf("spectrum:getPixel(%d,%d)=%d\n", x, y, int(res));
-        return res;
+        *R = res;
+        *G = res;
+        *B = res;
     }
 };
 
