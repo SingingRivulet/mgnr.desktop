@@ -174,10 +174,12 @@ struct fullRenderer {
 
     float maxElement;
     float minElement;
-    std::vector<std::vector<float>> data;
+    std::vector<std::vector<float>> data_length, data_phase;
     std::vector<float> mesh_x, mesh_y;
     int width = 0;
     int height = 0;
+    int minFreq = 0;
+    int maxFreq = 0;
 
     bool needUpdate = true;
 
@@ -188,8 +190,11 @@ struct fullRenderer {
     inline void updateDate() {
         maxElement = -INFINITY;
         minElement = INFINITY;
-        for (auto& step : data) {
-            for (auto& it : step) {
+        for (auto& step : data_length) {
+            int len = step.size();
+            len -= maxFreq;
+            for (int i = minFreq; i < len; ++i) {
+                auto it = step[i];
                 if (it > maxElement) {
                     maxElement = it;
                 }
@@ -233,7 +238,7 @@ struct fullRenderer {
                 mesh_x.clear();
                 int meshDelta = layout_show->scale * 32;
                 int pos = ((int)(viewPort.lookAtBegin.x / meshDelta)) * meshDelta;
-                printf("spectrum:viewPort.lookAtBegin.x=%d pos=%d\n", viewPort.lookAtBegin.x, pos);
+                //printf("spectrum:viewPort.lookAtBegin.x=%d pos=%d\n", viewPort.lookAtBegin.x, pos);
                 for (;; pos += meshDelta) {
                     int vpos = (pos - viewPort.lookAtBegin.x) / viewPort.scale;
                     if (vpos > viewPort.windowSize.x) {
@@ -386,7 +391,7 @@ struct fullRenderer {
             *B = 26;
             return;
         }
-        auto res = (data[x][height - y - 1] / maxElement) * 255;
+        auto res = (data_length[x][height - y - 1] / maxElement) * 255;
         res = std::max(res, 0.f);
         res = std::min(res, 255.f);
         //printf("spectrum:getPixel(%d,%d)=%d\n", x, y, int(res));

@@ -23,8 +23,10 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
         this->input.push_back(std::move(in0));
     }
     bool showSpec = false;
+    int stepCursor = -1;
     int specCursor = -1;
     bool fullSpecWindowMoveable = true;
+    bool stepSpecWindowMoveable = true;
     void draw() override {
         char title[128];
         if (showSpec) {
@@ -55,10 +57,10 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                 ImVec2 canvas_sz = ImGui::GetContentRegionAvail();
                 draw_list->AddRectFilled(p0, pend, ImColor(ImVec4(0.1, 0.1, 0.1, 1.0f)));
                 fullRenderer.render();
-                if (specCursor > 0) {
+                if (stepCursor > 0) {
                     static ImVec4 colf = ImVec4(0.0f, 1.0f, 0.4f, 1.0f);
                     const ImU32 col = ImColor(colf);
-                    int cursorPos = (specCursor - fullRenderer.viewPort.lookAtBegin.x) / fullRenderer.viewPort.scale;
+                    int cursorPos = (stepCursor - fullRenderer.viewPort.lookAtBegin.x) / fullRenderer.viewPort.scale;
                     draw_list->AddLine(p0 + ImVec2(cursorPos, 0), p0 + ImVec2(cursorPos, h), col);
                 }
                 if (ImGui::IsWindowFocused()) {
@@ -87,8 +89,8 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                                 auto mpos = ImGui::GetMousePos();
                                 auto wpos = mpos - p0;
                                 auto spos = wpos.x * fullRenderer.viewPort.scale + fullRenderer.viewPort.lookAtBegin.x;
-                                specCursor = spos;
-                                stepRenderer.get(specCursor);
+                                stepCursor = spos;
+                                stepRenderer.get(stepCursor);
                             }
                         }
                     } else {
@@ -97,16 +99,20 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                 }
             }
             ImGui::End();
-            if (specCursor > 0) {
+            if (stepCursor > 0 && stepRenderer.len > 0) {
+                int windowFlag = ImGuiWindowFlags_NoFocusOnAppearing;
+                if (!stepSpecWindowMoveable) {
+                    windowFlag |= ImGuiWindowFlags_NoMove;
+                }
                 ImGui::SetNextWindowSize(ImVec2(925, 500), ImGuiCond_FirstUseEver);
-                snprintf(title, sizeof(title), "频谱显示(时刻)##%d", this->windowId,
-                         ImGuiWindowFlags_NoFocusOnAppearing);
-                if (ImGui::Begin(title)) {
+                snprintf(title, sizeof(title), "频谱显示(时刻)##%d", this->windowId);
+                if (ImGui::Begin(title, nullptr, windowFlag)) {
                     global->checkfocus();
                     //ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
                     ImVec2 p0 = ImGui::GetCursorScreenPos() + ImVec2(20, 20);
                     int w = ImGui::GetWindowWidth() - 40;
                     int h = ImGui::GetWindowHeight() - 60;
+                    ImVec2 pend = p0 + ImVec2(w, h);
                     ImDrawList* draw_list = ImGui::GetWindowDrawList();
                     draw_list->AddRectFilled(p0, p0 + ImVec2(w, h), ImColor(ImVec4(0, 0, 0.2, 1.0f)));
                     auto col = ImColor(ImVec4(1, 1, 1, 1.0f));
@@ -129,6 +135,50 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                             pos += p0;
                             draw_list->AddLine(last, pos, col);
                             last = pos;
+                        }
+                    }
+
+                    if (ImGui::IsWindowHovered() && ImGui::IsMouseHoveringRect(p0, pend)) {
+                        stepSpecWindowMoveable = false;
+                        if (ImGui::IsMouseDown(0)) {
+                            auto mpos = ImGui::GetMousePos();
+                            auto wpos = (mpos - p0).x;
+                            if (wpos >= 0 && wpos < w) {
+                                specCursor = wpos * stepRenderer.len / w;
+                            }
+                        }
+                    } else {
+                        stepSpecWindowMoveable = true;
+                    }
+                    char buf[256];
+                    snprintf(buf, sizeof(buf), "帧号：%d", stepCursor);
+                    draw_list->AddText(ImVec2(0, 0) + p0, col, buf);
+                    if (specCursor >= 0) {
+                        snprintf(buf, sizeof(buf), "位置：%d", specCursor);
+                        draw_list->AddText(ImVec2(0, 20) + p0, col, buf);
+                        ImVec2 pos0((specCursor * w) / stepRenderer.len, 0);
+                        ImVec2 pos1((specCursor * w) / stepRenderer.len, h);
+                        draw_list->AddLine(pos0 + p0, pos1 + p0, col);
+                        try {
+                            snprintf(buf, sizeof(buf), "数值：%f",
+                                     fullRenderer.data_length.at(stepCursor).at(specCursor));
+                            draw_list->AddText(ImVec2(0, 40) + p0, col, buf);
+
+                            if (!fullRenderer.data_phase.empty()) {
+                                auto phase = fullRenderer.data_phase.at(stepCursor).at(specCursor);
+                                int deg = phase * 180 / M_PI;
+                                snprintf(buf, sizeof(buf), "相位：%d", deg);
+                                draw_list->AddText(ImVec2(0, 60) + p0, col, buf);
+                                /*
+                                //测试
+                                int btime = 256 * stepCursor;  //当前时间（单位：点）
+                                //波的公式：sin(f*fftsize*(t+btime))
+                                int bphase = (btime * specCursor) % 512;
+                                snprintf(buf, sizeof(buf), "初相：%d", bphase);
+                                draw_list->AddText(ImVec2(0, 80) + p0, col, buf);
+                                */
+                            }
+                        } catch (...) {
                         }
                     }
                 }
@@ -154,7 +204,10 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                 if (ceps != nullptr) {
                     fullRenderer.height = 0;
                     fullRenderer.width = 0;
-                    fullRenderer.data.clear();
+                    fullRenderer.data_length.clear();
+                    fullRenderer.data_phase.clear();
+                    fullRenderer.minFreq = 1;
+                    fullRenderer.maxFreq = 1;
                     int numFrame = 0;
                     char buf[256];
                     ceps->read([&](const wav_frame_t& w) {
@@ -168,7 +221,7 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                                 auto value = data[i];
                                 block[i] = value;
                             }
-                            fullRenderer.data.push_back(std::move(block));
+                            fullRenderer.data_length.push_back(std::move(block));
                         }
                         ++numFrame;
                     });
@@ -181,7 +234,10 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                     if (spec != nullptr) {
                         fullRenderer.height = 0;
                         fullRenderer.width = 0;
-                        fullRenderer.data.clear();
+                        fullRenderer.data_length.clear();
+                        fullRenderer.data_phase.clear();
+                        fullRenderer.minFreq = 0;
+                        fullRenderer.maxFreq = 0;
                         int numFrame = 0;
                         char buf[256];
                         spec->read([&](const spectrum_t& w) {
@@ -190,14 +246,17 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                                 int len = w.size / 2;
                                 fullRenderer.height = len;
                                 ++fullRenderer.width;
-                                std::vector<float> block;
-                                block.resize(len);
+                                std::vector<float> block_length;
+                                std::vector<float> block_phase;
+                                block_length.resize(len);
+                                block_phase.resize(len);
                                 for (int i = 0; i < len; ++i) {
                                     auto value = sqrt(data[i].r * data[i].r + data[i].i * data[i].i);
-                                    block[i] = value;
-                                    ;
+                                    block_length[i] = value;
+                                    block_phase[i] = atan(data[i].i / data[i].r);
                                 }
-                                fullRenderer.data.push_back(std::move(block));
+                                fullRenderer.data_length.push_back(std::move(block_length));
+                                fullRenderer.data_phase.push_back(std::move(block_phase));
                             }
                             ++numFrame;
                         });

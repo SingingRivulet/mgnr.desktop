@@ -167,8 +167,8 @@ void spectrum_t::buildCepstrum(wav_frame_t* w) const {
             for (int i = 0; i < size; ++i) {
                 //构建对数谱
                 auto ws = sqrt(ptr_self[i].r * ptr_self[i].r + ptr_self[i].i * ptr_self[i].i);
-                if (ws < 0.0001) {
-                    ws = 0.0001;
+                if (ws < 1e-9) {
+                    ws = 1e-9;
                 }
                 buffer[i].r = log(ws);
                 buffer[i].i = 0;
