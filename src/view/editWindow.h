@@ -94,8 +94,8 @@ class editWindow : public mgnr::synth {
     void buildScroll();
 
     void onSetChannelIns(int c, int ins) override;
-    void callSynthNoteOn(const char* info, int channel, int tone, int vol) override;
-    void callSynthNoteOff(const char* info, int channel, int tone) override;
+    void callSF2NoteOn(const char* info, int channel, int tone, int vol) override;
+    void callSF2NoteOff(const char* info, int channel, int tone) override;
     void onSelectedChange(int len) override;
     void onScriptCmd(const char* cmd) override;
 

@@ -38,9 +38,9 @@ void offline::scrollBuilder_onGetAllNotePos(note*) {}
 
 void offline::scrollBuilder_onSwap() {}
 
-void offline::callSynthNoteOn(const char* info, int channel, int tone, int vol) {}
+void offline::callSF2NoteOn(const char* info, int channel, int tone, int vol) {}
 
-void offline::callSynthNoteOff(const char* info, int channel, int tone) {}
+void offline::callSF2NoteOff(const char* info, int channel, int tone) {}
 
 void offline::onLoadName(const stringPool::stringPtr& name) {}
 
@@ -68,8 +68,8 @@ void offline::onSetChannelIns(int c, int ins) {
     tsf_channel_set_presetnumber(soundfont, c, ins);
 }
 
-int offline::getTime() {
-    return (int)nowTime;
+long offline::getTime() {
+    return (long)nowTime;
 }
 
 offline::offline(const char* sf, int sampleRate) {

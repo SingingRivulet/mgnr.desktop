@@ -121,7 +121,7 @@ class editTable : public midiMap {
     void exportMidi(const std::string& str);
     void exportMidiWithTrackMapper(const std::string& filename);
 
-    float lookAtX;  //瞄准位置（左边缘中心点）
+    double lookAtX;  //瞄准位置（左边缘中心点）
     float lookAtY;
     int rawLeft;
     int rawRightMax = -1;

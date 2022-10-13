@@ -80,13 +80,13 @@ void renderContext::vscript_init() {
     //创建初始节点
     //节点类
 
-#define loadModule(name)                                             \
-    [this](vscript_t* s) {                                           \
-        std::unique_ptr<mgnr::vscript::node> n(new name(this));      \
-        auto p = s->addNode(std::move(n));                           \
-        ImNodes::SetNodeScreenSpacePos(p->id, ImGui::GetMousePos()); \
-        ImNodes::SnapNodeToGrid(p->id);                              \
-        return p;                                                    \
+#define loadModule(name)                                                         \
+    [this](vscript_t* s) {                                                       \
+        std::unique_ptr<mgnr::vscript::node> n(new name(this));                  \
+        auto p = s->addNode(std::move(n));                                       \
+        ImNodes::SetNodeScreenSpacePos(p->id, vscript.addNodeAtPort_window_pos); \
+        ImNodes::SnapNodeToGrid(p->id);                                          \
+        return p;                                                                \
     }
 #define addModule(dir, title_i, name, input)                  \
     {                                                         \
@@ -152,6 +152,10 @@ void renderContext::vscript_t::onAddNode() {
 
     if (ImGui::BeginPopupContextWindow()) {
         global->checkfocus();
+        if (!menuPopup) {
+            addNodeAtPort_window_pos = ImGui::GetMousePos();
+        }
+        menuPopup = true;
         if (!node_selected.empty()) {
             if (ImGui::MenuItem("删除节点")) {
                 for (auto it : node_selected) {
@@ -195,6 +199,8 @@ void renderContext::vscript_t::onAddNode() {
             ImGui::EndMenu();
         }
         ImGui::EndPopup();
+    } else {
+        menuPopup = false;
     }
 }
 

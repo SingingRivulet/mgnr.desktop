@@ -10,7 +10,7 @@ void synth::onNoteOn(note * n,int c){
         if(n->info.at(0)=='@')
             return;
     }
-    callSynthNoteOn(n->info.c_str(),c, n->tone, n->volume);
+    callSF2NoteOn(n->info.c_str(),c, n->tone, n->volume);
 }
 
 void synth::onNoteOff(note * n,int c){
@@ -18,7 +18,7 @@ void synth::onNoteOff(note * n,int c){
         if(n->info.at(0)=='@')
             return;
     }
-    callSynthNoteOff(n->info.c_str(),c, n->tone);
+    callSF2NoteOff(n->info.c_str(),c, n->tone);
 }
 void synth::onUseInfo(const stringPool::stringPtr & info){
     if(info.empty())

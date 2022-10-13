@@ -1,6 +1,7 @@
 #include "editWindow.h"
 renderContext::renderContext()
-    : fileDialog_saveMidi(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir) {
+    : fileDialog_saveMidi(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir),
+      fileDialog_exportWav(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir) {
     printf("mgenner:init...\n");
     loadConfig();
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);

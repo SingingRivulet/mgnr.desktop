@@ -46,6 +46,9 @@ void renderContext::ui_loop() {
                     if (ImGui::MenuItem("另存为", "ctrl+shift+s")) {
                         saveMidiDialog();
                     }
+                    if (ImGui::MenuItem("导出wav")) {
+                        exportWavDialog();
+                    }
                 }
                 ImGui::EndMenu();
             }
@@ -124,6 +127,10 @@ void renderContext::ui_loop() {
         if (fileDialog_openMidi.HasSelected()) {
             openMidiFile(fileDialog_openMidi.GetSelected().string());
             fileDialog_openMidi.ClearSelected();
+        }
+        if (fileDialog_exportWav.HasSelected()) {
+            exportWav(fileDialog_exportWav.GetSelected().string());
+            fileDialog_exportWav.ClearSelected();
         }
         if (fileDialog_saveMidi.HasSelected()) {
             std::string savePath = fileDialog_saveMidi.GetSelected().string();
@@ -643,10 +650,12 @@ void renderContext::ui_loop() {
     fileDialog_saveMidi.Display();
     fileDialog_loadMidi.Display();
     fileDialog_openMidi.Display();
+    fileDialog_exportWav.Display();
     if (ImGui::IsAnyItemHovered() ||
         !fileDialog_loadMidi.focusCanvas ||
         !fileDialog_saveMidi.focusCanvas ||
-        !fileDialog_openMidi.focusCanvas) {
+        !fileDialog_openMidi.focusCanvas ||
+        !fileDialog_exportWav.focusCanvas) {
         focusCanvas = false;
     }
     if (drawing && !drawing->show_edit_window) {
@@ -702,6 +711,11 @@ void renderContext::saveMidiDialog() {
     fileDialog_saveMidi.SetTypeFilters({".mid"});
     fileDialog_saveMidi.SetPwd("./");
     fileDialog_saveMidi.Open();
+}
+void renderContext::exportWavDialog() {
+    fileDialog_exportWav.SetTypeFilters({".wav"});
+    fileDialog_exportWav.SetPwd("./");
+    fileDialog_exportWav.Open();
 }
 
 void renderContext::loadMidiFile(const std::string& path) {

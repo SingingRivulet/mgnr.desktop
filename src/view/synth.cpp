@@ -44,10 +44,10 @@ void editWindow::onSetChannelIns(int c, int ins) {
     fluid_synth_program_change(parent->synth, c, ins);
 }
 
-void editWindow::callSynthNoteOn(const char* info, int channel, int tone, int vol) {
+void editWindow::callSF2NoteOn(const char* info, int channel, int tone, int vol) {
     fluid_synth_noteon(parent->synth, channel, tone, vol);
 }
 
-void editWindow::callSynthNoteOff(const char* info, int channel, int tone) {
+void editWindow::callSF2NoteOff(const char* info, int channel, int tone) {
     fluid_synth_noteoff(parent->synth, channel, tone);
 }

@@ -52,8 +52,8 @@ namespace mgnr{
             void toThemesPredict(std::string & out,int delta);//生成主旋律预测数据（供outTunner使用）
             
             std::vector<voiceTrack*> tracks;
-            virtual void callSynthNoteOn(const char * info,int channel,int tone,int vol)=0;
-            virtual void callSynthNoteOff(const char * info,int channel,int tone)=0;
+            virtual void callSF2NoteOn(const char * info,int channel,int tone,int vol)=0;
+            virtual void callSF2NoteOff(const char * info,int channel,int tone)=0;
             virtual void onLoadName(const stringPool::stringPtr & name)=0;
 
             ~synth();

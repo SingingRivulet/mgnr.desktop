@@ -112,13 +112,16 @@ struct renderContext : public mgnr::clipboard_t {
     ImGui::FileBrowser fileDialog_loadMidi;
     ImGui::FileBrowser fileDialog_openMidi;
     ImGui::FileBrowser fileDialog_saveMidi;
+    ImGui::FileBrowser fileDialog_exportWav;
 
     void loadMidiDialog();
     void saveMidiDialog();
     void openMidiDialog();
+    void exportWavDialog();
     void loadMidiFile(const std::string& path);
     void openMidiFile(const std::string& path);
     void saveMidiFile(const std::string& path);
+    void exportWav(const std::string& path);
     void saveMidiFile();
 
     void ui_init();
@@ -177,6 +180,7 @@ struct renderContext : public mgnr::clipboard_t {
     struct vscript_t : mgnr::vscript::script_ui {
         renderContext* global;
         bool addNodeMode = false;
+        bool menuPopup = false;
         std::vector<std::shared_ptr<vclass_t>> scriptClass_other;
         std::map<std::string, std::vector<std::shared_ptr<vclass_t>>> scriptClass;
         std::map<std::string, std::vector<std::shared_ptr<vclass_t>>> scriptClass_type;

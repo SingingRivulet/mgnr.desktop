@@ -136,17 +136,20 @@ void player::noteOff(note* n) {
     }
 }
 
-int player::getTime() {
+long player::getTime() {
     auto n = std::chrono::system_clock::now();
     auto d = std::chrono::duration_cast<std::chrono::milliseconds>(n.time_since_epoch());
     return d.count();
 }
 
 void player::goNextStep() {
-    int tt = getTime();
-    int delta = tt - lastTime;
+    long tt = getTime();
+    long delta = 0;
+    if (lastTime > 0) {
+        delta = tt - lastTime;
+    }
     lastTime = tt;
-    float dtick = ticksPerSecond() * (delta / 1000.0);
+    double dtick = ticksPerSecond() * (delta / 1000.0);
     lookAtX += dtick;
 }
 

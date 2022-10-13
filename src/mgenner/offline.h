@@ -15,7 +15,7 @@ class offline : public synth {
     tsf* soundfont = nullptr;
     double nowTime = 0;
     double sampleRate = 44100;
-    int nowTime_point = 0;
+    long long nowTime_point = 0;
 
    public:
     offline(const char* sf, int sampleRate = 44100);
@@ -62,15 +62,15 @@ class offline : public synth {
 
     void onSetChannelIns(int c, int ins) override;
 
-    void callSynthNoteOn(const char* info, int channel, int tone, int vol) override;
+    void callSF2NoteOn(const char* info, int channel, int tone, int vol) override;
 
-    void callSynthNoteOff(const char* info, int channel, int tone) override;
+    void callSF2NoteOff(const char* info, int channel, int tone) override;
 
     void onLoadName(const stringPool::stringPtr& name) override;
 
     void onSelectedChange(int len) override;
 
-    int getTime() override;
+    long getTime() override;
 
     bool renderStep(float* buffer);
 
