@@ -1,4 +1,5 @@
 #pragma once
+#include "offlineRender.h"
 #include "renderContext.h"
 class editWindow : public mgnr::synth {
    public:
@@ -82,6 +83,7 @@ class editWindow : public mgnr::synth {
     void drawScroll() override;
     void drawCaption(float p, const std::string& s) override;
     void draw();
+    bool drawUI();
     void hideMode();
     //////////////////////////////////////////////////////////////////
     //滚动条
@@ -98,6 +100,10 @@ class editWindow : public mgnr::synth {
     void callSF2NoteOff(const char* info, int channel, int tone) override;
     void onSelectedChange(int len) override;
     void onScriptCmd(const char* cmd) override;
+
+    //离线渲染
+    std::list<std::unique_ptr<offlineRender>> offlineRenderers;
+    void exportWav(const std::string& path_sf2, const std::string& path);
 
     editWindow(renderContext* p);
     ~editWindow();

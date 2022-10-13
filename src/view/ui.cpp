@@ -129,7 +129,9 @@ void renderContext::ui_loop() {
             fileDialog_openMidi.ClearSelected();
         }
         if (fileDialog_exportWav.HasSelected()) {
-            exportWav(fileDialog_exportWav.GetSelected().string());
+            if (drawing) {
+                drawing->exportWav(path_sf2, fileDialog_exportWav.GetSelected().string());
+            }
             fileDialog_exportWav.ClearSelected();
         }
         if (fileDialog_saveMidi.HasSelected()) {
@@ -646,6 +648,10 @@ void renderContext::ui_loop() {
         }
     }
     module_show();
+    for (auto& it : editWindows) {
+        auto status = it.second->drawUI();
+        focusCanvas = focusCanvas && (!status);
+    }
 
     fileDialog_saveMidi.Display();
     fileDialog_loadMidi.Display();

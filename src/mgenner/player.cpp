@@ -149,7 +149,8 @@ void player::goNextStep() {
         delta = tt - lastTime;
     }
     lastTime = tt;
-    double dtick = ticksPerSecond() * (delta / 1000.0);
+    auto tps = ticksPerSecond();
+    double dtick = tps * (delta / 1000.0);
     lookAtX += dtick;
 }
 

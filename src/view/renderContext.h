@@ -121,7 +121,6 @@ struct renderContext : public mgnr::clipboard_t {
     void loadMidiFile(const std::string& path);
     void openMidiFile(const std::string& path);
     void saveMidiFile(const std::string& path);
-    void exportWav(const std::string& path);
     void saveMidiFile();
 
     void ui_init();

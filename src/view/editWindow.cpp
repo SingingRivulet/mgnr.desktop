@@ -314,7 +314,19 @@ void editWindow::drawCaption(float p, const std::string& s) {
     SDL_RenderCopy(parent->renderer, tex, NULL, &rect);
 }
 
+bool editWindow::drawUI() {
+    //离线渲染
+    bool focus = false;
+    for (auto& offlineRenderer : offlineRenderers) {
+        focus = focus || offlineRenderer->render();
+    }
+    offlineRenderers.remove_if([](auto& p) {
+        return p->close;
+    });
+    return focus;
+}
 void editWindow::draw() {
+    //绘制
     this->render();
     if (lastDefaultInfo != defaultInfo) {
         lastDefaultInfo = defaultInfo;
