@@ -10,4 +10,5 @@ class offlineRender {
     bool render();
     virtual void stop() = 0;
     virtual void loop() = 0;
+    virtual ~offlineRender();
 };

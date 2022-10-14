@@ -617,7 +617,7 @@ std::string editTable::exportString() {
     return res;
 }
 
-void editTable::exportMidi(const std::string& filename) {
+void editTable::exportMidi(const std::string& filename, bool markSave) {
     map<stringPool::stringPtr, int> tracks;
     int trackNum = 1;  //0音轨存没有info的音符
     int track;
@@ -773,11 +773,13 @@ void editTable::exportMidi(const std::string& filename) {
         }
     }
     midifile.write(filename);
-    editStatus = false;
-    editStatusUpdate();
+    if (markSave) {
+        editStatus = false;
+        editStatusUpdate();
+    }
 }
 
-void editTable::exportMidiWithTrackMapper(const std::string& filename) {
+void editTable::exportMidiWithTrackMapper(const std::string& filename, bool markSave) {
     int maxTrack = 0;
     for (auto& it : trackNameMapper) {
         if (it.second > maxTrack) {
@@ -946,8 +948,10 @@ void editTable::exportMidiWithTrackMapper(const std::string& filename) {
         delete it;
     }
     midifile.write(filename);
-    editStatus = false;
-    editStatusUpdate();
+    if (markSave) {
+        editStatus = false;
+        editStatusUpdate();
+    }
 }
 
 }  // namespace mgnr

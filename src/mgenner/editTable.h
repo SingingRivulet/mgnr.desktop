@@ -118,8 +118,8 @@ class editTable : public midiMap {
     void loadMidi(const std::string& str);
     std::string loadMidi_preprocess(const std::string& str, const std::string& script, int tone);
     std::string exportString();
-    void exportMidi(const std::string& str);
-    void exportMidiWithTrackMapper(const std::string& filename);
+    void exportMidi(const std::string& str, bool markSave = true);
+    void exportMidiWithTrackMapper(const std::string& filename, bool markSave = true);
 
     double lookAtX;  //瞄准位置（左边缘中心点）
     float lookAtY;
@@ -143,7 +143,7 @@ class editTable : public midiMap {
     bool isMajor;
     int getBaseTone();  //获取调性
 
-    float defaultDuration;                 //持续时间
+    float defaultDuration;              //持续时间
     int defaultVolume;                  //音量
     stringPool::stringPtr defaultInfo;  //信息
 

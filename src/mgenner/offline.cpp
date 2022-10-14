@@ -76,7 +76,7 @@ offline::offline(const char* sf, int sampleRate) {
     this->sampleRate = sampleRate;
     if (sf) {
         soundfont = tsf_load_filename(sf);
-        tsf_set_output(soundfont, TSF_MONO, sampleRate, 0.8);
+        tsf_set_output(soundfont, TSF_MONO, sampleRate, 0.5);
         tsf_channel_set_bank_preset(soundfont, 9, 128, 0);
     }
 }
@@ -100,8 +100,8 @@ bool offline::renderStep(float* buffer) {
         playStart();
     }
     playStep();
-    tsf_render_float(soundfont, buffer, 64, 0);
-    nowTime_point += 64;
+    tsf_render_float(soundfont, buffer, 512, 0);
+    nowTime_point += 512;
     return noteTimeMax > lookAtX;
 }
 }  // namespace mgnr

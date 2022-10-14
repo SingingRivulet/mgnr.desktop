@@ -7,6 +7,10 @@
 #include "offline.h"
 #include "synth/simple.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 bool offlineRender::render() {
     char buf[512];
     snprintf(buf, sizeof(buf), "导出wav##%s", path.c_str());
@@ -31,6 +35,7 @@ bool offlineRender::render() {
     ImGui::End();
     return focus;
 }
+offlineRender::~offlineRender() {}
 
 class simpleRender : public offlineRender {
    public:
@@ -38,46 +43,49 @@ class simpleRender : public offlineRender {
     std::thread processThread;
     std::atomic<bool> processing = false;
     FILE* fp;
+    std::string tmpPath;
+    int sampleRate;
     simpleRender(editWindow* midi,
                  const char* sf,
                  int sampleRate,
                  const char* outpath)
         : renderer(sf, sampleRate) {
-        for (auto it : midi->notes) {
-            renderer.addNote(it->begin, it->tone, it->duration, it->volume, it->info);
-        }
-        renderer.timeMap = midi->timeMap;
-        renderer.TPQ = midi->TPQ;
+        std::string tmpPath_dir = "/tmp";
+#ifdef _WIN32
+        TCHAR temp_file[255];
+        GetTempPath(255, temp_file);
+        tmpPath_dir = temp_file;
+#endif
+        this->sampleRate = sampleRate;
+        tmpPath = tmpPath_dir + "/mgnrtmp" + std::to_string(rand()) + ".mid";
+        midi->exportMidi(tmpPath, false);
+        renderer.loadMidi(tmpPath);
         renderer.updateTimeMax();
-        float buf[64];
+        float buf[512];
         path = outpath;
         fp = fopen(outpath, "w");
         if (fp) {
-            std::thread p([&]() {
+            processThread = std::thread([this]() {
                 processing = true;
-                float buf[64];
-                WavOutFile out(fp, sampleRate, 32, 1);
+                float buf[512];
+                WavOutFile out(fp, this->sampleRate, 32, 1);
                 while (processing && renderer.renderStep(buf)) {
-                    out.write(buf, 64);
+                    out.write(buf, 512);
                     progress = (float)renderer.lookAtX / renderer.noteTimeMax;
                 }
                 processing = false;
                 done = true;
             });
-            processThread = std::move(p);
         }
     }
-    ~simpleRender() {
+    ~simpleRender() override {
         stop();
-        if (fp) {
-            fclose(fp);
-        }
+        processThread.join();
+        remove(tmpPath.c_str());
+        printf("remove:%s\n", tmpPath.c_str());
     }
     void stop() override {
-        if (processing) {
-            processing = false;
-            processThread.join();
-        }
+        processing = false;
     }
     void loop() override {
     }

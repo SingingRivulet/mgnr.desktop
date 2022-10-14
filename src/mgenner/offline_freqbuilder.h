@@ -17,7 +17,7 @@ inline void render(const std::string& midi,
     printf("offline_render:render");
     mgnr::offline renderer(sf, sampleRate);
     renderer.loadMidi(midi);
-    float buf[64];
+    float buf[512];
     printf("offline_render:render start...");
     renderer.updateTimeMax();
     while (renderer.renderStep(buf)) {
@@ -46,7 +46,7 @@ inline void getFreq(const std::string& midi,
         window[i] = (1.0 - 0.46) - (0.46 * cos(2.0 * M_PI * i / (fftSize - 1.0)));
     }
 
-    int dataNum = blockNum * 64;
+    int dataNum = blockNum * 512;
     if (dataNum <= fftSize) {
         //计算左右的空白
         int padLeft, padRight;
@@ -60,8 +60,8 @@ inline void getFreq(const std::string& midi,
         //构建数组缓冲
         std::list<float*> dataBuff;
         for (int i = 0; i < blockNum; ++i) {
-            auto ptr = new float[64];
-            for (int j = 0; j < 64; ++j) {
+            auto ptr = new float[512];
+            for (int j = 0; j < 512; ++j) {
                 ptr[j] = 0;
             }
             dataBuff.push_back(ptr);
@@ -76,7 +76,7 @@ inline void getFreq(const std::string& midi,
                 float* ptr = *dataBuff_it;
                 dataBuff.erase(dataBuff_it);
                 dataBuff.push_back(ptr);
-                for (int i = 0; i < 64; ++i) {
+                for (int i = 0; i < 512; ++i) {
                     ptr[i] = buffer[i];
                 }
             }
@@ -91,7 +91,7 @@ inline void getFreq(const std::string& midi,
                 }
                 //填充数据
                 for (auto& it : dataBuff) {
-                    for (int j = 0; j < 64; ++j) {
+                    for (int j = 0; j < 512; ++j) {
                         fftBuffer[index].r = it[j];
                         fftBuffer[index].i = 0;
                         ++index;
