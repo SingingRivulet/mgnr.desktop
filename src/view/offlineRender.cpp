@@ -5,7 +5,6 @@
 #include "WavFile.h"
 #include "editWindow.h"
 #include "offline.h"
-#include "synth/simple.h"
 
 #ifdef _WIN32
 #include <Windows.h>

@@ -14,6 +14,7 @@ find_library(sdl2main_LIBRARY SDL2main)
 find_library(fluidsynth_LIBRARY fluidsynth)
 find_path(sdl2_ttf_INCLUDE_DIR SDL_ttf.h)
 find_library(sdl2_ttf_LIBRARY SDL2_ttf)
+find_library(sox_LIBRARY sox)
 find_library(dl_LIBRARY dl)
 
 add_subdirectory(modules)
@@ -125,6 +126,7 @@ target_link_libraries(mgnr
     ${sdl2_ttf_LIBRARY}
     ${fluidsynth_LIBRARY}
     ${dl_LIBRARY}
+    ${sox_LIBRARY}
 )
 
 set_target_properties(mgnr PROPERTIES OUT_NAME "mgnr")

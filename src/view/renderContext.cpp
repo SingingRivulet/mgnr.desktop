@@ -1,4 +1,5 @@
 #include "editWindow.h"
+#include "synthesizer/streamPlayer.h"
 renderContext::renderContext()
     : fileDialog_saveMidi(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir),
       fileDialog_exportWav(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir) {
@@ -20,9 +21,14 @@ renderContext::renderContext()
     toneMapInit();
     ui_init();
     synth_init();
+    synthThread = std::thread([this]() {
+        synthThread_func();
+    });
 }
 renderContext::~renderContext() {
     printf("mgenner:release mgenner\n");
+    running = false;
+    synthThread.join();
 
     for (int i = 0; i < 128; i++) {
         SDL_DestroyTexture(std::get<0>(toneMap[i]));
@@ -146,9 +152,11 @@ void renderContext::draw() {
 }
 
 void renderContext::playStep() {
+    synthList_locker.lock();
     for (auto& it : editWindows) {
         it.second->playStep();
     }
+    synthList_locker.unlock();
 }
 
 SDL_Texture* renderContext::getText(const std::string& str,
@@ -190,15 +198,57 @@ std::tuple<int, editWindow*> renderContext::createWindow() {
     snprintf(buf, sizeof(buf), "新文件%d", p->windowId);
     p->fileName = buf;
 
+    synthList_locker.lock();
+    synthList.insert(ptr);
+    synthList_locker.unlock();
+
     editWindows[p->windowId] = std::move(p);
     return std::make_tuple(ptr->windowId, ptr);
 }
+
+void renderContext::synthThread_func() {
+    float left[512], right[512];
+    float *dry[1 * 2], *fx[1 * 2];
+    dry[0] = left;
+    dry[1] = right;
+    fx[0] = left;
+    fx[1] = right;
+    sox_sample_t playBuffer[1024];
+    mgnr::synthesizer::streamPlayer player;
+    while (running) {
+        synthList_locker.lock();
+        //for (auto& it : synthList) {
+        //}
+        memset(left, 0, sizeof(left));
+        memset(right, 0, sizeof(right));
+
+        int err = fluid_synth_process(synth, 512, 2, fx, 2, dry);
+
+        if (err == FLUID_FAILED) {
+            puts("oops\n");
+        } else {
+            //构造数据
+            for (int i = 0; i < 512; ++i) {
+                playBuffer[i * 2] = left[i] * 0x7fffffff;
+                playBuffer[i * 2 + 1] = right[i] * 0x7fffffff;
+            }
+        }
+        synthList_locker.unlock();
+        player.write(playBuffer);
+    }
+}
+
 void renderContext::closeWindow(int id) {
     auto it = editWindows.find(id);
     if (it != editWindows.end()) {
         if (drawing == it->second.get()) {
             drawing = nullptr;
         }
+
+        synthList_locker.lock();
+        synthList.erase(it->second.get());
+        synthList_locker.unlock();
+
         editWindows.erase(it);
     }
     if (drawing == nullptr) {

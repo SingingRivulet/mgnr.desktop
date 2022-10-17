@@ -27,15 +27,15 @@ void renderContext::synth_init() {
 
     /* Create the audio driver. The synthesizer starts playing as soon
        as the driver is created. */
-    adriver = new_fluid_audio_driver(settings, synth);
-    if (adriver == NULL) {
-        puts("Failed to create the audio driver!");
-        exit(1);
-    }
+    //adriver = new_fluid_audio_driver(settings, synth);
+    //if (adriver == NULL) {
+    //    puts("Failed to create the audio driver!");
+    //    exit(1);
+    //}
 }
 
 void renderContext::synth_shutdown() {
-    delete_fluid_audio_driver(adriver);
+    //delete_fluid_audio_driver(adriver);
     delete_fluid_synth(synth);
     delete_fluid_settings(settings);
 }

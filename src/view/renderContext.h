@@ -8,8 +8,11 @@
 #include <imgui_impl_sdlrenderer.h>
 #include <imnodes.h>
 #include <imnodes_internal.h>
+#include <atomic>
 #include <filesystem>
 #include <iostream>
+#include <mutex>
+#include <thread>
 #include "imfilebrowser.h"
 #include "lua.hpp"
 #include "luacall.h"
@@ -22,6 +25,12 @@ struct renderContext : public mgnr::clipboard_t {
     ~renderContext();
 
     std::map<int, std::unique_ptr<editWindow>> editWindows;
+
+    std::set<editWindow*> synthList;
+    std::mutex synthList_locker;
+    void synthThread_func();
+    std::thread synthThread;
+
     int windows_current_id = 0;
     std::tuple<int, editWindow*> createWindow();
     void closeWindow(int id);
@@ -40,7 +49,7 @@ struct renderContext : public mgnr::clipboard_t {
 
     std::tuple<SDL_Texture*, int, int> toneMap[128];
     editWindow* drawing = nullptr;
-    bool running = true;
+    std::atomic<bool> running = true;
     int windowHeight;  //窗口高度
     int windowWidth;   //窗口宽度
 

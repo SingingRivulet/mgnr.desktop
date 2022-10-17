@@ -1,6 +1,6 @@
 #pragma once
+#include <string>
 #include "editWindow.h"
-#include "synth/simple.h"
 class offlineRender {
    public:
     bool done = false;
