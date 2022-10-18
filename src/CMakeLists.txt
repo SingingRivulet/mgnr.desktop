@@ -37,7 +37,6 @@ add_executable(mgnr
     ./view/midiEditor.cpp
     ./view/ui.cpp
     ./view/events.cpp
-    ./view/synth.cpp
     ./view/module.cpp
     ./view/vscript.cpp
     ./view/renderContext.cpp
@@ -48,6 +47,11 @@ add_executable(mgnr
     ./vscript/vscript_ui.cpp
 
     ./sysmodule/types/wavfile.cpp
+
+    ./synthesizer/synthesizer.cpp
+    ./synthesizer/effector.cpp
+    ./synthesizer/vinstrument.cpp
+    ./synthesizer/module/sf2.cpp
 
     ./utils/WavFile.cpp
 

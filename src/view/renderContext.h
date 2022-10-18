@@ -205,12 +205,6 @@ struct renderContext : public mgnr::clipboard_t {
     void vscript_init();
 
     /////////////////////////////////////////////////////////////////////////////
-    //合成器
-    fluid_settings_t* settings = nullptr;
-    fluid_synth_t* synth = nullptr;
-    fluid_audio_driver_t* adriver = nullptr;
     int sfont_id;
-    void synth_init();
-    void synth_shutdown();
     void playStep();
 };

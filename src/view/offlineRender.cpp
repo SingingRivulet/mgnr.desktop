@@ -47,8 +47,7 @@ class simpleRender : public offlineRender {
     simpleRender(editWindow* midi,
                  const char* sf,
                  int sampleRate,
-                 const char* outpath)
-        : renderer(sf, sampleRate) {
+                 const char* outpath) {
         std::string tmpPath_dir = "/tmp";
 #ifdef _WIN32
         TCHAR temp_file[255];
@@ -60,16 +59,15 @@ class simpleRender : public offlineRender {
         midi->exportMidi(tmpPath, false);
         renderer.loadMidi(tmpPath);
         renderer.updateTimeMax();
-        float buf[512];
         path = outpath;
         fp = fopen(outpath, "w");
         if (fp) {
             processThread = std::thread([this]() {
                 processing = true;
-                float buf[512];
-                WavOutFile out(fp, this->sampleRate, 32, 1);
+                float buf[1024];
+                WavOutFile out(fp, this->sampleRate, 32, 2);
                 while (processing && renderer.renderStep(buf)) {
-                    out.write(buf, 512);
+                    out.write(buf, 1024);
                     progress = (float)renderer.lookAtX / renderer.noteTimeMax;
                 }
                 processing = false;

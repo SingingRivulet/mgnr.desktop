@@ -4,6 +4,7 @@
 #include <list>
 #include <set>
 #include "editTable.h"
+#include "synthesizer/synthesizer.h"
 namespace mgnr {
 class player : public editTable {
    public:
@@ -19,9 +20,7 @@ class player : public editTable {
     bool playingStatus;
     std::set<note*> playing;
 
-    virtual void onNoteOn(note* n, int c) = 0;
-    virtual void onNoteOff(note* n, int c) = 0;
-    virtual void onSetChannelIns(int c, int ins) = 0;
+    synthesizer::synthesizer midiSynthesizer;
 
    private:
     std::set<note*> toPlay;
@@ -34,13 +33,6 @@ class player : public editTable {
         return (tempo * TPQ) / 60.0;
     }
     void goNextStep();
-    int playNum[16];
-    int playIns[16];
-    int ins2Channel[128];
-
-   public:
-    int useInstrument(const stringPool::stringPtr& n);
-    int releaseInstrument(const stringPool::stringPtr& n);
 };
 }  // namespace mgnr
 #endif

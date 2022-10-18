@@ -242,11 +242,6 @@ class diff_loader : public synth {
     void scrollBuilder_onGetNoteArea() override {}
     void scrollBuilder_onGetAllNotePos(note*) override {}
     void scrollBuilder_onSwap() override {}
-    void onNoteOn(note* n, int c) override {}
-    void onNoteOff(note* n, int c) override {}
-    void onSetChannelIns(int c, int ins) override {}
-    void callSF2NoteOn(const char* info, int channel, int tone, int vol) override {}
-    void callSF2NoteOff(const char* info, int channel, int tone) override {}
     void onLoadName(const stringPool::stringPtr& name) override {}
     void onSelectedChange(int len) override {}
     void drawDescriptions(float p, const stringPool::stringPtr& title, const std::string& content) override {}

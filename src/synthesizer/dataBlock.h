@@ -6,8 +6,8 @@
 namespace mgnr::synthesizer {
 
 struct dataBlock {
-    typedef float buffer_channel[512] ;
-    float buffer_channel[2];
+    typedef float buffer_channel_t[512] ;
+    buffer_channel_t buffer_channel[2];
 };
 
 }  // namespace mgnr::synthesizer

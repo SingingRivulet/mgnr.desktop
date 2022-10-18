@@ -1,4 +1,5 @@
 #include "editWindow.h"
+#include "synthesizer/module/sf2.h"
 #include "synthesizer/streamPlayer.h"
 renderContext::renderContext()
     : fileDialog_saveMidi(ImGuiFileBrowserFlags_EnterNewFilename | ImGuiFileBrowserFlags_CreateNewDir),
@@ -20,7 +21,6 @@ renderContext::renderContext()
 
     toneMapInit();
     ui_init();
-    synth_init();
     synthThread = std::thread([this]() {
         synthThread_func();
     });
@@ -41,7 +41,6 @@ renderContext::~renderContext() {
     words.clear();
     shutdownModules();
     ui_shutdown();
-    synth_shutdown();
     if (renderer) {
         SDL_DestroyRenderer(renderer);
     }
@@ -198,6 +197,10 @@ std::tuple<int, editWindow*> renderContext::createWindow() {
     snprintf(buf, sizeof(buf), "新文件%d", p->windowId);
     p->fileName = buf;
 
+    //初始化默认合成器
+    auto defaultSynth = std::make_shared<mgnr::synthesizer::vinstrument::sf2>(path_sf2.c_str());
+    p->midiSynthesizer.ins.ins.push_back(std::move(defaultSynth));
+
     synthList_locker.lock();
     synthList.insert(ptr);
     synthList_locker.unlock();
@@ -207,33 +210,29 @@ std::tuple<int, editWindow*> renderContext::createWindow() {
 }
 
 void renderContext::synthThread_func() {
-    float left[512], right[512];
-    float *dry[1 * 2], *fx[1 * 2];
-    dry[0] = left;
-    dry[1] = right;
-    fx[0] = left;
-    fx[1] = right;
     sox_sample_t playBuffer[1024];
     mgnr::synthesizer::streamPlayer player;
     while (running) {
+        mgnr::synthesizer::dataBlock block;
         synthList_locker.lock();
-        //for (auto& it : synthList) {
-        //}
-        memset(left, 0, sizeof(left));
-        memset(right, 0, sizeof(right));
 
-        int err = fluid_synth_process(synth, 512, 2, fx, 2, dry);
-
-        if (err == FLUID_FAILED) {
-            puts("oops\n");
-        } else {
-            //构造数据
+        bzero(&block, sizeof(block));
+        for (auto& it : synthList) {
+            mgnr::synthesizer::dataBlock localBlock;
+            bzero(&localBlock, sizeof(localBlock));
+            it->midiSynthesizer.ins.render(&localBlock);
+            it->midiSynthesizer.eff.process(&localBlock);
             for (int i = 0; i < 512; ++i) {
-                playBuffer[i * 2] = left[i] * 0x7fffffff;
-                playBuffer[i * 2 + 1] = right[i] * 0x7fffffff;
+                block.buffer_channel[0][i] += localBlock.buffer_channel[0][i];
+                block.buffer_channel[1][i] += localBlock.buffer_channel[1][i];
             }
         }
+
         synthList_locker.unlock();
+        for (int i = 0; i < 512; ++i) {
+            playBuffer[i * 2 + 0] = block.buffer_channel[0][i] * 0x7fffffff;
+            playBuffer[i * 2 + 1] = block.buffer_channel[1][i] * 0x7fffffff;
+        }
         player.write(playBuffer);
     }
 }

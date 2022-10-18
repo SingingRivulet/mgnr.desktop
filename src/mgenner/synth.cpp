@@ -1,32 +1,17 @@
 #include "synth.h"
-namespace mgnr{
+namespace mgnr {
 
-synth::~synth(){
+synth::~synth() {
     clearTracks();
 }
 
-void synth::onNoteOn(note * n,int c){
-    if(!n->info.empty()){
-        if(n->info.at(0)=='@')
-            return;
-    }
-    callSF2NoteOn(n->info.c_str(),c, n->tone, n->volume);
-}
-
-void synth::onNoteOff(note * n,int c){
-    if(!n->info.empty()){
-        if(n->info.at(0)=='@')
-            return;
-    }
-    callSF2NoteOff(n->info.c_str(),c, n->tone);
-}
-void synth::onUseInfo(const stringPool::stringPtr & info){
-    if(info.empty())
+void synth::onUseInfo(const stringPool::stringPtr& info) {
+    if (info.empty())
         return;
-    if(info.at(0)=='@')
+    if (info.at(0) == '@')
         return;
     onLoadName(info);
     loadInstrument(info);
 }
 
-}
+}  // namespace mgnr

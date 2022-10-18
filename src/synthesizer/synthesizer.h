@@ -13,7 +13,6 @@ struct synthesizer {
     vinstrument::manager ins;
     effector::manager eff;
     bool running = false;
-    //播放音符（有线程安全）
     inline void play_noteOn(note* n) {
         ins.play_noteOn(n);
     }
@@ -22,6 +21,7 @@ struct synthesizer {
     }
     inline void play_start() {
         running = true;
+        ins.play_stopAll();
     }
     inline void play_stop() {
         running = false;
