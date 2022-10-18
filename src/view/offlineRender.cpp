@@ -59,6 +59,7 @@ class simpleRender : public offlineRender {
         midi->exportMidi(tmpPath, false);
         renderer.loadMidi(tmpPath);
         renderer.updateTimeMax();
+        renderer.midiSynthesizer = mgnr::synthesizer::synthesizer(midi->midiSynthesizer);
         path = outpath;
         fp = fopen(outpath, "w");
         if (fp) {

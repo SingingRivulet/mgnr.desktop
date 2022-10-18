@@ -65,6 +65,7 @@ class editWindow : public mgnr::synth {
 
     bool show_edit_window = false;
     bool show_trackSelect_window = false;
+    bool show_synth_window = false;
 
     int noteWidth_items_id = 3;
 
@@ -84,6 +85,7 @@ class editWindow : public mgnr::synth {
     void drawCaption(float p, const std::string& s) override;
     void draw();
     bool drawUI();
+    void drawSynthUI();
     void hideMode();
     //////////////////////////////////////////////////////////////////
     //滚动条

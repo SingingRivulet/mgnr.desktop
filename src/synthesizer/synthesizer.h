@@ -9,6 +9,7 @@ namespace mgnr::synthesizer {
 
 struct synthesizer {
     synthesizer();
+    synthesizer(synthesizer&);
     ~synthesizer();
     vinstrument::manager ins;
     effector::manager eff;

@@ -7,6 +7,8 @@ struct sf2 : instrument {
     fluid_settings_t* settings = nullptr;
     fluid_synth_t* synth = nullptr;
 
+    std::string path;
+
     int playNum[16];
     int playIns[16];
     int ins2Channel[128];
@@ -21,6 +23,8 @@ struct sf2 : instrument {
     int useInstrument(const stringPool::stringPtr& n);
     int releaseInstrument(const stringPool::stringPtr& n);
     int getInstrumentId(const stringPool::stringPtr& name);
+    void settingWindow();
+    instrument* clone();
     sf2(const char* path);
     ~sf2() override;
 };

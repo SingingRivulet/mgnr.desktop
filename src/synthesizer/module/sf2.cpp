@@ -1,4 +1,5 @@
 #include "sf2.h"
+#include <imgui/imgui.h>
 
 namespace mgnr {
 extern const char* instrumentName[128];
@@ -6,6 +7,8 @@ extern const char* instrumentName[128];
 namespace synthesizer::vinstrument {
 
 sf2::sf2(const char* path) {
+    name = "sf2合成器";
+    this->path = path;
     for (int i = 0; i < 128; ++i) {
         instrument2Id[instrumentName[i]] = i;
     }
@@ -25,6 +28,18 @@ sf2::sf2(const char* path) {
     if (sfont_id == FLUID_FAILED) {
         puts("Loading the SoundFont failed!");
     }
+}
+
+instrument* sf2::clone() {
+    return new sf2(path.c_str());
+}
+
+void sf2::settingWindow() {
+    char buf[256];
+    snprintf(buf, sizeof(buf), "##down%d", this);
+    if (ImGui::Begin("sf2合成器", &show_setting)) {
+    }
+    ImGui::End();
 }
 
 void sf2::render(dataBlock* buffer) {

@@ -42,6 +42,7 @@ add_executable(mgnr
     ./view/renderContext.cpp
     ./view/editWindow.cpp
     ./view/offlineRender.cpp
+    ./view/synthConfig.cpp
 
     ./vscript/vscript.cpp
     ./vscript/vscript_ui.cpp

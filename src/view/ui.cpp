@@ -67,6 +67,9 @@ void renderContext::ui_loop() {
                             "保存时若音轨映射关系错误，\n"
                             "会自动呼出此菜单");
                     }
+                    if (ImGui::MenuItem("设置合成器")) {
+                        drawing->show_synth_window = true;
+                    }
                 }
                 ImGui::EndMenu();
             }
@@ -648,6 +651,9 @@ void renderContext::ui_loop() {
         }
     }
     module_show();
+    if (drawing) {
+        drawing->drawSynthUI();
+    }
     for (auto& it : editWindows) {
         auto status = it.second->drawUI();
         focusCanvas = focusCanvas && (!status);
