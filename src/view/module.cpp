@@ -396,7 +396,18 @@ void renderContext::loadConfig() {
     lua_mainthread = luaL_newstate();
     luaL_openlibs(lua_mainthread);
     luaopen_imgui(lua_mainthread);
-    luaL_dofile(lua_mainthread, "config.lua");
+    auto env_mgnr_path = getenv("MGNR_PATH");
+    if (env_mgnr_path) {
+        lua_pushstring(lua_mainthread, env_mgnr_path);
+    } else {
+        lua_pushnil(lua_mainthread);
+    }
+    lua_setglobal(lua_mainthread, "env_mgnr_path");
+    if (env_mgnr_path) {
+        luaL_dofile(lua_mainthread, (std::string(env_mgnr_path) + "/config.lua").c_str());
+    } else {
+        luaL_dofile(lua_mainthread, "config.lua");
+    }
     {
         lua_getglobal(lua_mainthread, "path_sf2");
         if (lua_isstring(lua_mainthread, -1)) {

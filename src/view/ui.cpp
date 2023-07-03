@@ -251,6 +251,7 @@ void renderContext::ui_loop() {
                     if (drawing->TPQ < 1) {
                         drawing->TPQ = 1;
                     }
+                    drawing->rebuildNoteLen();
                 }
                 if (ImGui::IsItemHovered()) {
                     ImGui::SetTooltip("TPQ，即每四分音符的tick数");

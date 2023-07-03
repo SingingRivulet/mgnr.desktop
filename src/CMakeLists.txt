@@ -23,6 +23,7 @@ include_directories(
     ./
     ./mgenner
     ./utils
+    ./sysmodule
     ./dep/
     ./dep/imgui
     ./dep/imnodes

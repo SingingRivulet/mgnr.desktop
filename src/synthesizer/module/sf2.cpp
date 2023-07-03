@@ -1,4 +1,5 @@
 #include "sf2.h"
+#include <fileselector.h>
 #include <imgui/imgui.h>
 
 namespace mgnr {
@@ -24,9 +25,11 @@ sf2::sf2(const char* path) {
         exit(1);
     }
 
-    auto sfont_id = fluid_synth_sfload(synth, path, 1);
-    if (sfont_id == FLUID_FAILED) {
-        puts("Loading the SoundFont failed!");
+    if (path) {
+        auto sfont_id = fluid_synth_sfload(synth, path, 1);
+        if (sfont_id == FLUID_FAILED) {
+            puts("Loading the SoundFont failed!");
+        }
     }
 }
 
@@ -86,6 +89,7 @@ void sf2::play_stopAll() {
     for (int i = 0; i < 16; ++i) {
         playNum[i] = 0;
         playIns[i] = -1;
+        fluid_synth_all_notes_off(synth, i);
     }
     for (int i = 0; i < 128; ++i) {
         ins2Channel[i] = -1;
@@ -93,8 +97,12 @@ void sf2::play_stopAll() {
 }
 
 sf2::~sf2() {
-    delete_fluid_synth(synth);
-    delete_fluid_settings(settings);
+    if (synth) {
+        delete_fluid_synth(synth);
+    }
+    if (settings) {
+        delete_fluid_settings(settings);
+    }
 }
 
 int sf2::useInstrument(const stringPool::stringPtr& n) {
