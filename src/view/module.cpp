@@ -422,6 +422,20 @@ void renderContext::loadConfig() {
         }
         lua_pop(lua_mainthread, 1);
     }
+    {
+        lua_getglobal(lua_mainthread, "path_imgui_ini");
+        if (lua_isstring(lua_mainthread, -1)) {
+            path_imgui_ini = lua_tostring(lua_mainthread, -1);
+        }
+        lua_pop(lua_mainthread, 1);
+    }
+    {
+        lua_getglobal(lua_mainthread, "path_imgui_log");
+        if (lua_isstring(lua_mainthread, -1)) {
+            path_imgui_log = lua_tostring(lua_mainthread, -1);
+        }
+        lua_pop(lua_mainthread, 1);
+    }
     std::vector<std::string> modulePath;
     {
         lua_pushcfunction(lua_mainthread, lua_registerModule);

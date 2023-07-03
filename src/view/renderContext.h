@@ -139,6 +139,9 @@ struct renderContext : public mgnr::clipboard_t {
     //插件
     bool module_showNodeEditor = false;
     std::string path_font = "./res/font/font.ttf";
+    std::string path_imgui_ini = "./imgui.ini";
+    std::string path_imgui_log = "./imgui_log.txt";
+    
     std::string path_sf2 = "./res/soundfont/sndfnt.sf2";
 
     struct vclass_lua;

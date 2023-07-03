@@ -5,6 +5,8 @@ void renderContext::ui_init() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = path_imgui_ini.c_str();
+    io.LogFilename = path_imgui_log.c_str();
 
     io.Fonts->AddFontFromFileTTF(path_font.c_str(),
                                  20.f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
