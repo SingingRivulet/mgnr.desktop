@@ -56,11 +56,13 @@ struct renderContext : public mgnr::clipboard_t {
     int mouse_x;
     int mouse_y;
     bool focusCanvas;
+    bool hoverCanvas;
     std::vector<SDL_Event> events;
     bool button_ctrl = false;
     bool button_shift = false;
     void loop();
-    void processEvents();
+    void processEvents_mouse();
+    void processEvents_keyboard();
     void draw();
 
     void toneMapInit();
@@ -141,7 +143,7 @@ struct renderContext : public mgnr::clipboard_t {
     std::string path_font = "./res/font/font.ttf";
     std::string path_imgui_ini = "./imgui.ini";
     std::string path_imgui_log = "./imgui_log.txt";
-    
+
     std::string path_sf2 = "./res/soundfont/sndfnt.sf2";
 
     struct vclass_lua;
@@ -166,11 +168,17 @@ struct renderContext : public mgnr::clipboard_t {
     void module_loop();
     void shutdownModules();
 
-    inline void checkfocus() {
-        if (ImGui::IsItemFocused() ||
-            ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) ||
-            ImGui::IsWindowHovered(ImGuiFocusedFlags_RootAndChildWindows)) {
-            focusCanvas = false;
+    inline void checkfocus(bool checkFocused = true, bool checkHover = true) {
+        if (checkFocused) {
+            if (ImGui::IsItemFocused() ||
+                ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+                focusCanvas = false;
+            }
+        }
+        if (checkHover) {
+            if (ImGui::IsWindowHovered(ImGuiFocusedFlags_RootAndChildWindows)) {
+                hoverCanvas = false;
+            }
         }
     }
     //节点编辑器

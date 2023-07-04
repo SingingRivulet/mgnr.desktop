@@ -123,6 +123,20 @@ void renderContext::ui_loop() {
             if (ImGui::IsItemHovered()) {
                 ImGui::SetTooltip("隐藏其他音轨，仅显示此音轨");
             }
+            ImGui::SameLine();
+            ImGui::SameLine();
+            if (ImGui::Checkbox("框选模式", &selectByBox)) {
+                drawing->clearSelected();
+                if (focus_note) {
+                    drawing->infoFilter = drawing->defaultInfo;
+                    drawing->show_trackSelect_window = true;
+                } else {
+                    drawing->infoFilter.clear();
+                }
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("s键");
+            }
         }
 
         if (fileDialog_loadMidi.HasSelected()) {
@@ -223,19 +237,6 @@ void renderContext::ui_loop() {
                     }
                     if (ImGui::IsItemHovered()) {
                         ImGui::SetTooltip("back/delete");
-                    }
-                    ImGui::SameLine();
-                    if (selectByBox) {
-                        if (ImGui::Button("取消框选")) {
-                            selectByBox = false;
-                        }
-                    } else {
-                        if (ImGui::Button("框选模式")) {
-                            selectByBox = true;
-                        }
-                    }
-                    if (ImGui::IsItemHovered()) {
-                        ImGui::SetTooltip("s键");
                     }
                     ImGui::SameLine();
                     if (ImGui::Button("清除选择")) {
@@ -676,7 +677,7 @@ void renderContext::ui_loop() {
     if (drawing && !drawing->show_edit_window) {
         drawing->pasteMode = false;
     }
-    if (drawing && !focusCanvas) {
+    if (drawing && !hoverCanvas) {
         drawing->displayBuffer.clear();
     }
 }

@@ -1,6 +1,6 @@
 #include "mgenner.h"
 
-void renderContext::processEvents() {
+void renderContext::processEvents_mouse() {
     if (drawing == nullptr) {
         return;
     }
@@ -80,6 +80,7 @@ void renderContext::processEvents() {
                 }
             }
         } else if (event.type == SDL_MOUSEMOTION) {  //移动鼠标
+            //printf("mouse:%d %d\n", event.motion.x, event.motion.y);
             drawing->clickToDisplay(event.motion.x, event.motion.y);
             if (selectingByBox) {
                 selectBoxXend = event.motion.x;
@@ -87,38 +88,51 @@ void renderContext::processEvents() {
             }
         } else if (event.type == SDL_MOUSEWHEEL) {
             if (mouse_y > windowHeight - 30) {
-                if (button_ctrl) {
-                    if (event.wheel.y < 0) {
-                        drawing->noteLength /= 1.3;
-                    } else if (event.wheel.y > 0) {
-                        drawing->noteLength *= 1.3;
-                    }
-                } else {
-                    if (event.wheel.y < 0) {
-                        drawing->lookAtX += 200 / drawing->noteLength;
-                    } else if (event.wheel.y > 0) {
-                        drawing->lookAtX -= 200 / drawing->noteLength;
-                    }
-                }
             } else if (mouse_y > windowHeight - 60) {
             } else if (mouse_y > 40) {
-                if (button_ctrl) {
-                    if (event.wheel.y < 0) {
-                        drawing->noteHeight /= 1.3;
-                    } else if (event.wheel.y > 0) {
-                        drawing->noteHeight *= 1.3;
+                if (mouse_x > 30) {
+                    if (button_ctrl) {
+                        if (event.wheel.y < 0) {
+                            drawing->noteLength /= 1.3;
+                        } else if (event.wheel.y > 0) {
+                            drawing->noteLength *= 1.3;
+                        }
+                    } else {
+                        if (event.wheel.y < 0) {
+                            drawing->lookAtX += 200 / drawing->noteLength;
+                        } else if (event.wheel.y > 0) {
+                            drawing->lookAtX -= 200 / drawing->noteLength;
+                        }
                     }
                 } else {
-                    if (event.wheel.y < 0) {
-                        drawing->lookAtY -= 50 / drawing->noteHeight;
-                    } else if (event.wheel.y > 0) {
-                        drawing->lookAtY += 50 / drawing->noteHeight;
+                    if (button_ctrl) {
+                        if (event.wheel.y < 0) {
+                            drawing->noteHeight /= 1.3;
+                        } else if (event.wheel.y > 0) {
+                            drawing->noteHeight *= 1.3;
+                        }
+                    } else {
+                        if (event.wheel.y < 0) {
+                            drawing->lookAtY -= 50 / drawing->noteHeight;
+                        } else if (event.wheel.y > 0) {
+                            drawing->lookAtY += 50 / drawing->noteHeight;
+                        }
                     }
                 }
             } else {
             }
         } else if (event.type == SDL_KEYUP) {
         }
+        if (event.type == SDL_KEYDOWN) {
+        }
+    }
+}
+
+void renderContext::processEvents_keyboard() {
+    if (drawing == nullptr) {
+        return;
+    }
+    for (auto& event : events) {
         if (event.type == SDL_KEYDOWN) {
             switch (event.key.keysym.sym) {
                 case SDLK_UP:

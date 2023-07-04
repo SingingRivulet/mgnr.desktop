@@ -104,10 +104,14 @@ void renderContext::loop() {
         }
     }
     focusCanvas = true;
+    hoverCanvas = true;
     playStep();
     draw();
     if (focusCanvas) {
-        processEvents();
+        processEvents_keyboard();
+    }
+    if (hoverCanvas) {
+        processEvents_mouse();
     }
     events.clear();
 }
