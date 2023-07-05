@@ -1383,6 +1383,7 @@ void editTable::scaleNoteUpdate(double delta) {
     struct arg_t {
         bool* res;
         editTable* self;
+        note* srcNote;
         int x;
         int defaultDelay;
         stringPool::stringPtr info;
@@ -1396,6 +1397,7 @@ void editTable::scaleNoteUpdate(double delta) {
 
         //检查音符重叠
         arg.defaultDelay = it.dur;
+        arg.srcNote = it.srcNote;
         arg.x = it.begin;
         arg.info = it.srcNote->info;
 
@@ -1416,7 +1418,7 @@ void editTable::scaleNoteUpdate(double delta) {
                 if (n->info != self->info) {
                     return;
                 }
-                if (n->selected) {
+                if (self->srcNote == n) {
                     return;
                 }
                 *(self->res) = false;

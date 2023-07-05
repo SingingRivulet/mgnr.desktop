@@ -90,8 +90,10 @@ void player::previewNote_on(int pitch, int v) {
     }
 }
 void player::previewNote_off() {
-    previewNote.playing = false;
-    noteOff(&previewNote);
+    if (previewNote.playing) {
+        previewNote.playing = false;
+        noteOff(&previewNote);
+    }
 }
 void player::noteOn(note* n) {
     if (n) {

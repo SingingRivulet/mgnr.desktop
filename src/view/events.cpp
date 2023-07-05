@@ -61,6 +61,8 @@ void renderContext::processEvents_mouse() {
                     } else {
                         if (drawing->show_edit_window) {
                             addNoteMode = true;
+                            auto p = drawing->screenToAbs(mouse_x, mouse_y);
+                            drawing->previewNote_on(p.Y, drawing->defaultVolume);
                         }
                     }
                 }
