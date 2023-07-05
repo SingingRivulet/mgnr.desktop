@@ -41,7 +41,7 @@ struct renderContext : public mgnr::clipboard_t {
     SDL_Renderer* renderer = nullptr;
     TTF_Font* font = nullptr;
 
-    std::unordered_map<std::string, std::array<unsigned char, 3>> colors;
+    std::unordered_map<std::string, std::tuple<float, float>> colors;  //采用hsl格式
     std::unordered_map<std::string,
                        std::map<std::tuple<int, int, int>,
                                 std::tuple<SDL_Texture*, int, int>>>
@@ -218,7 +218,7 @@ struct renderContext : public mgnr::clipboard_t {
         mgnr::vscript::port_output* addNodeAtPort = nullptr;
         ImVec2 addNodeAtPort_window_pos;
         void addNodeAt(mgnr::vscript::port_output* p) override;
-        void checkFocus()override;
+        void checkFocus() override;
     } vscript;
     std::vector<std::string> scriptConsole{};
     void addVClass(std::shared_ptr<vclass_t> p);

@@ -1,5 +1,47 @@
 #include "editWindow.h"
 
+inline double Hue_2_RGB(double v1, double v2, double vH) {
+    if (vH < 0)
+        vH += 1;
+    if (vH > 1)
+        vH -= 1;
+    if ((6 * vH) < 1)
+        return (v1 + (v2 - v1) * 6 * vH);
+    if ((2 * vH) < 1)
+        return v2;
+    if ((3 * vH) < 2)
+        return (v1 + (v2 - v1) * ((2.0 / 3.0) - vH) * 6);
+
+    return v1;
+}
+
+//HSL from 0 to 240;    RGB results from 0 to 255
+inline void HSLtoRGB(float h, float s, float l, float& R, float& G, float& B) {
+    double v1, v2;
+    //转到HSL(1, 1, 1)的空间
+    double H = h / 240;
+    double S = s / 240;
+    double L = l / 240;
+
+    if (0 == S) {
+        //转回到RGB(255, 255, 255)的空间
+        R = L * 255;
+        G = L * 255;
+        B = L * 255;
+    } else {
+        if (L < 0.5)
+            v2 = L * (1 + S);
+        else
+            v2 = (L + S) - (L * S);
+
+        v1 = 2 * L - v2;
+
+        //转回到RGB(255, 255, 255)的空间
+        R = 255 * Hue_2_RGB(v1, v2, H + (1.0 / 3.0));
+        G = 255 * Hue_2_RGB(v1, v2, H);
+        B = 255 * Hue_2_RGB(v1, v2, H - (1.0 / 3.0));
+    }
+}
 editWindow::editWindow(renderContext* p) {
     parent = p;
     snprintf(defaultInfoBuffer, sizeof(defaultInfoBuffer), "%s", defaultInfo.c_str());
@@ -79,30 +121,28 @@ void editWindow::drawNote(int fx, int fy, int tx, int ty, int volume, const mgnr
 
     if (!info.empty()) {
         if (info[0] != '@') {
-            unsigned char r, g, b;
+            float h, s, r, g, b;
             auto it = parent->colors.find(info.c_str());
             if (it == parent->colors.end()) {
-                r = rand() % 64;
-                g = rand() % 64;
-                b = rand() % 64;
-                std::array<unsigned char, 3> arr;
-                arr[0] = r;
-                arr[1] = g;
-                arr[2] = b;
-                parent->colors[info.c_str()] = arr;
+                h = rand() % 240;
+                s = rand() % 240;
+                std::tuple<float, float> t(h, s);
+                parent->colors[info.c_str()] = t;
             } else {
-                r = it->second[0];
-                g = it->second[1];
-                b = it->second[2];
+                h = std::get<0>(it->second);
+                s = std::get<0>(it->second);
             }
-            SDL_SetRenderDrawColor(parent->renderer, r + volume, g + volume, b + volume, SDL_ALPHA_OPAQUE);
+            HSLtoRGB(h, s, volume + 50, r, g, b);
+            SDL_SetRenderDrawColor(parent->renderer, r, g, b, SDL_ALPHA_OPAQUE);
             SDL_RenderFillRect(parent->renderer, &rect);
         } else {
             SDL_SetRenderDrawColor(parent->renderer, 128, 128, 192, SDL_ALPHA_OPAQUE);
             SDL_RenderFillRect(parent->renderer, &rect);
         }
     } else {
-        SDL_SetRenderDrawColor(parent->renderer, 64 + volume, 64 + volume, 30, SDL_ALPHA_OPAQUE);
+        float r, g, b;
+        HSLtoRGB(128, 128, volume + 50, r, g, b);
+        SDL_SetRenderDrawColor(parent->renderer, r, g, b, SDL_ALPHA_OPAQUE);
         SDL_RenderFillRect(parent->renderer, &rect);
     }
 

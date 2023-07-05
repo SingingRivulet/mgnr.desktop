@@ -146,19 +146,21 @@ void renderContext::processEvents_mouse() {
                 }
                 //检测鼠标位置，确定鼠标形态
                 {
-                    auto p = drawing->screenToAbs(mouse_x, mouse_y);
                     resizeNotehover = false;
-                    drawing->find(
-                        p, [](mgnr::note* n, void* arg) {  //调用HBB搜索
-                            auto self = (renderContext*)arg;
-                            if (n->selected) {
-                                auto endline = (n->begin + n->duration - self->drawing->lookAtX) * self->drawing->noteLength;
-                                if (fabs(endline - self->mouse_x) < 10) {
-                                    self->resizeNotehover = true;
+                    if (drawing->show_edit_window) {
+                        auto p = drawing->screenToAbs(mouse_x, mouse_y);
+                        drawing->find(
+                            p, [](mgnr::note* n, void* arg) {  //调用HBB搜索
+                                auto self = (renderContext*)arg;
+                                if (n->selected) {
+                                    auto endline = (n->begin + n->duration - self->drawing->lookAtX) * self->drawing->noteLength;
+                                    if (fabs(endline - self->mouse_x) < 10) {
+                                        self->resizeNotehover = true;
+                                    }
                                 }
-                            }
-                        },
-                        this);
+                            },
+                            this);
+                    }
                 }
             }
         } else if (event.type == SDL_MOUSEWHEEL) {

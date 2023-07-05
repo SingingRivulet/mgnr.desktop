@@ -310,6 +310,7 @@ void renderContext::showCloseWindow() {
             ImGui::End();
         }
         focusCanvas = false;
+        hoverCanvas = false;
         ImGui::End();
         if (!opening) {
             //关闭了窗口
