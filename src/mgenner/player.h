@@ -15,6 +15,10 @@ class player : public editTable {
     void noteOn(note*);
     void noteOff(note*);
 
+    void previewNote_on(int pitch, int v);
+    note previewNote;
+    void previewNote_off();
+
     double tempo;
     virtual long getTime();
     bool playingStatus;

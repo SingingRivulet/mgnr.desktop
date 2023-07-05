@@ -110,6 +110,10 @@ void renderContext::processEvents_mouse() {
                         } else if (selectNoteFail) {
                             drawing->clickToUnselect(event.motion.x, event.motion.y);
                         }
+                    } else {
+                        if (selectNoteFail) {
+                            drawing->clickToUnselect(event.motion.x, event.motion.y);
+                        }
                     }
                 }
                 addNoteMode = false;
@@ -118,6 +122,7 @@ void renderContext::processEvents_mouse() {
                 resizeNoteMode = false;
                 resizeNoteReady = false;
                 drawing->showDisplayBuffer = true;
+                drawing->previewNote_off();
             }
         } else if (event.type == SDL_MOUSEMOTION) {  //移动鼠标
             //printf("mouse:%d %d\n", event.motion.x, event.motion.y);
@@ -130,6 +135,9 @@ void renderContext::processEvents_mouse() {
                     drawing->moveNoteUpdate(event.motion.x, event.motion.y);
                 } else if (resizeNoteMode) {
                     drawing->scaleNoteUpdate(event.motion.x - moveNoteX);
+                } else if (addNoteMode) {
+                    auto p = drawing->screenToAbs(mouse_x, mouse_y);
+                    drawing->previewNote_on(p.Y, drawing->defaultVolume);
                 } else {
                     if (selectNoteFail) {
                         if (abs(event.motion.x - moveNoteX) > 10 ||

@@ -18,7 +18,7 @@ void player::playStep() {
             printf("mgenner:set tempo:%f\n", tempo);
         }
 
-        toPlay.clear();
+        //toPlay.clear();
         //获取所有此时刻的音符
         find(
             lookAtX, [](note* n, void* arg) {
@@ -30,7 +30,7 @@ void player::playStep() {
         //扫描没播放的音符
         std::list<note*> stopList;
         for (auto it : playing) {
-            if (it->playTimes != playTimes) {  //playTimes没更新，说明音符停止
+            if (it->playTimes != playTimes && it != &previewNote) {  //playTimes没更新，说明音符停止
                 stopList.push_back(it);
             }
         }
@@ -54,6 +54,9 @@ void player::playStop() {
     for (auto it : stopList) {
         noteOff(it);
     }
+    if (previewNote.playing) {
+        previewNote_off();
+    }
     midiSynthesizer.play_stop();
     playing.clear();
     playingStatus = false;
@@ -68,6 +71,28 @@ void player::playStart() {
     midiSynthesizer.play_start();
 }
 
+void player::previewNote_on(int pitch, int v) {
+    if (previewNote.playing) {
+        if (previewNote.tone != pitch) {
+            noteOff(&previewNote);
+        } else {
+            return;
+        }
+    }
+    previewNote.tone = pitch;
+    previewNote.info = defaultInfo;
+    previewNote.volume = v;
+    if (playingStatus) {
+        noteOn(&previewNote);
+    } else {
+        previewNote.playing = true;
+        midiSynthesizer.play_noteOn(&previewNote);
+    }
+}
+void player::previewNote_off() {
+    previewNote.playing = false;
+    noteOff(&previewNote);
+}
 void player::noteOn(note* n) {
     if (n) {
         if (!n->playing) {
