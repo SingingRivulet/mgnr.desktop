@@ -62,8 +62,13 @@ void editWindow::drawNote(int fx, int fy, int tx, int ty, int volume, const mgnr
     bd.w = rect.w + 4;
     bd.h = rect.h + 4;
     if (onlydisplay) {
-        SDL_SetRenderDrawColor(parent->renderer, volume, volume, 30, SDL_ALPHA_OPAQUE);
-        SDL_RenderFillRect(parent->renderer, &rect);
+        SDL_SetRenderDrawColor(parent->renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+        SDL_Rect od;
+        od.x = fx - 1;
+        od.y = fy - 1;
+        od.w = rect.w + 2;
+        od.h = rect.h + 2;
+        SDL_RenderFillRect(parent->renderer, &od);
     } else if (selected) {
         SDL_SetRenderDrawColor(parent->renderer, 255, 128, 192, SDL_ALPHA_OPAQUE);
         SDL_RenderFillRect(parent->renderer, &bd);

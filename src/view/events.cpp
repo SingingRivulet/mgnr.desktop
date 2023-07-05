@@ -1,6 +1,11 @@
 #include "mgenner.h"
 
 void renderContext::processEvents_mouse() {
+    if (resizeNoteReady || resizeNotehover || resizeNoteMode) {
+        ImGui::SetMouseCursor(4);
+    } else {
+        ImGui::SetMouseCursor(0);
+    }
     if (drawing == nullptr) {
         return;
     }
@@ -46,6 +51,9 @@ void renderContext::processEvents_mouse() {
                     if (drawing->inNote(event.motion.x, event.motion.y)) {
                         drawing->showDisplayBuffer = false;
                         if (drawing->clickToSelect(event.motion.x, event.motion.y) == 0) {
+                            if (resizeNotehover) {
+                                resizeNoteReady = true;
+                            }
                             selectNoteFail = true;
                             moveNoteX = event.motion.x;
                             moveNoteY = event.motion.y;
@@ -95,6 +103,8 @@ void renderContext::processEvents_mouse() {
                     if (drawing->show_edit_window) {
                         if (moveNoteMode) {
                             drawing->moveNoteEnd(event.motion.x, event.motion.y);
+                        } else if (resizeNoteMode) {
+                            drawing->scaleNoteEnd();
                         } else if (addNoteMode) {
                             drawing->addDisplaied();
                         } else if (selectNoteFail) {
@@ -105,6 +115,8 @@ void renderContext::processEvents_mouse() {
                 addNoteMode = false;
                 moveNoteMode = false;
                 selectNoteFail = false;
+                resizeNoteMode = false;
+                resizeNoteReady = false;
                 drawing->showDisplayBuffer = true;
             }
         } else if (event.type == SDL_MOUSEMOTION) {  //移动鼠标
@@ -116,14 +128,37 @@ void renderContext::processEvents_mouse() {
             } else {
                 if (moveNoteMode) {
                     drawing->moveNoteUpdate(event.motion.x, event.motion.y);
+                } else if (resizeNoteMode) {
+                    drawing->scaleNoteUpdate(event.motion.x - moveNoteX);
                 } else {
                     if (selectNoteFail) {
                         if (abs(event.motion.x - moveNoteX) > 10 ||
                             abs(event.motion.y - moveNoteY) > 10) {
-                            moveNoteMode = true;
-                            drawing->moveNoteBegin(event.motion.x, event.motion.y);
+                            if (resizeNoteReady) {
+                                resizeNoteMode = true;
+                                drawing->scaleNoteBegin();
+                            } else {
+                                moveNoteMode = true;
+                                drawing->moveNoteBegin(event.motion.x, event.motion.y);
+                            }
                         }
                     }
+                }
+                //检测鼠标位置，确定鼠标形态
+                {
+                    auto p = drawing->screenToAbs(mouse_x, mouse_y);
+                    resizeNotehover = false;
+                    drawing->find(
+                        p, [](mgnr::note* n, void* arg) {  //调用HBB搜索
+                            auto self = (renderContext*)arg;
+                            if (n->selected) {
+                                auto endline = (n->begin + n->duration - self->drawing->lookAtX) * self->drawing->noteLength;
+                                if (fabs(endline - self->mouse_x) < 10) {
+                                    self->resizeNotehover = true;
+                                }
+                            }
+                        },
+                        this);
                 }
             }
         } else if (event.type == SDL_MOUSEWHEEL) {
