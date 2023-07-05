@@ -135,7 +135,7 @@ void renderContext::ui_loop() {
                 }
             }
             if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("s键");
+                ImGui::SetTooltip("框选模式（快捷键：s）");
             }
         }
 

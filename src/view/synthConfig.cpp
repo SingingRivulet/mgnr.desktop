@@ -80,6 +80,7 @@ void editWindow::drawSynthUI() {
                                 it->settingWindow();
                             }
                         }
+                        ImGui::EndTable();
                     }
                     ImGui::EndTabItem();
                 }

@@ -131,6 +131,9 @@ void renderContext::vscript_t::addNodeAt(mgnr::vscript::port_output* p) {
     addNodeAtPort = p;
     addNodeAtPort_window_pos = ImVec2(global->mouse_x, global->mouse_y);
 }
+void renderContext::vscript_t::checkFocus() {
+    global->checkfocus();
+}
 void renderContext::vscript_t::onAddNode() {
     if (ImGui::BeginPopup("添加节点")) {
         global->checkfocus();
