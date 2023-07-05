@@ -81,7 +81,7 @@ void editTable::drawDisplay() {
 
 int editTable::inNote(int x, int y) {
     auto p = screenToAbs(x, y);
-    automatic(p.X, p.Y);
+    //automatic(p.X, p.Y);
     if (p.X < 0 || (rawRightMax > 0 && p.X > rawRightMax - 1) || p.Y < 0 || p.Y > pitchNum - 1) {
         return 0;
     }
@@ -90,8 +90,7 @@ int editTable::inNote(int x, int y) {
         bool isNote = false;
     } arg;
     find(
-        HBB::vec(p.X, p.Y + 0.1),
-        HBB::vec(p.X + defaultDuration, p.Y + 0.8),
+        HBB::vec(p.X, p.Y),
         [](note* n, void* arg) {
             auto self = (arg_t*)arg;
             self->isNote = true;
