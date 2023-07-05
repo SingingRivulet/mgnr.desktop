@@ -80,8 +80,13 @@ struct renderContext : public mgnr::clipboard_t {
     bool selectingByBox = false;
     int selectBoxX;
     int selectBoxY;
+    int moveNoteX;
+    int moveNoteY;
     int selectBoxXend;
     int selectBoxYend;
+    bool addNoteMode = false;
+    bool moveNoteMode = false;
+    bool selectNoteFail = false;
     //////////////////////////////////////////////////////////////////
     ///ui相关
 

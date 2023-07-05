@@ -151,6 +151,35 @@ void midiMap::resizeNote(note* p) {
         noteUpdated = true;
     }
 }
+
+void midiMap::moveNote(note* p) {
+    if (p) {
+        if (p->indexer) {
+            auto i = (HBB::AABB*)(p->indexer);
+            i->autodrop();
+        }
+
+        HBB::vec from;
+        HBB::vec to;
+        from.set(p->begin, p->tone);
+        to = from;
+        to.X += p->duration;
+        to.Y += 0.9;
+
+        timeIndex.erase(p->beginIndex);
+        timeIndex.erase(p->endIndex);
+        p->getBeginIndex();  //更新头部索引
+        p->getEndIndex();    //更新尾部索引
+        timeIndex[p->beginIndex] = p;
+        timeIndex[p->endIndex] = p;
+
+        auto bx = indexer.add(from, to, p);
+        p->indexer = bx;
+
+        noteUpdated = true;
+    }
+}
+
 void midiMap::removeNote(note* p, bool unselect) {
     if (p) {
         if (p->indexer) {

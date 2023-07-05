@@ -23,6 +23,7 @@ editTable::editTable() {
 editTable::~editTable() {
 }
 
+void editTable::drawMoveTarget(int fx, int fy, int tx, int ty) {}
 void editTable::render() {
     drawNote_begin();
     findNote();
@@ -35,16 +36,77 @@ void editTable::render() {
 }
 
 void editTable::drawDisplay() {
-    for (auto& it : displayBuffer) {
-        drawNoteAbs(
-            it.begin,
-            it.tone,
-            it.dur,
-            it.volume,
-            it.info,
-            false,
-            true);
+    if (showDisplayBuffer) {
+        for (auto& it : displayBuffer) {
+            drawNoteAbs(
+                it.begin,
+                it.tone,
+                it.dur,
+                it.volume,
+                it.info,
+                false,
+                true);
+        }
     }
+    if (moveBufferCheckPassed) {
+        for (auto& it : moveBuffer) {
+            drawNoteAbs(
+                it.begin,
+                it.tone,
+                it.dur,
+                it.srcNote->volume,
+                it.srcNote->info,
+                false,
+                true);
+
+            drawMoveTarget(
+                (it.srcNote->begin - lookAtX) * noteLength,
+                windowHeight - (it.srcNote->tone - realLookAtY + 0.5) * noteHeight,
+                (it.begin - lookAtX) * noteLength,
+                windowHeight - (it.tone - realLookAtY + 0.5) * noteHeight);
+        }
+    } else if (scaleCheckPassed) {
+        for (auto& it : moveBuffer) {
+            drawNoteAbs(
+                it.begin,
+                it.tone,
+                it.dur,
+                it.srcNote->volume,
+                it.srcNote->info,
+                false,
+                true);
+        }
+    }
+}
+
+int editTable::inNote(int x, int y) {
+    auto p = screenToAbs(x, y);
+    automatic(p.X, p.Y);
+    if (p.X < 0 || (rawRightMax > 0 && p.X > rawRightMax - 1) || p.Y < 0 || p.Y > pitchNum - 1) {
+        return 0;
+    }
+    struct arg_t {
+        bool isSelected = false;
+        bool isNote = false;
+    } arg;
+    find(
+        HBB::vec(p.X, p.Y + 0.1),
+        HBB::vec(p.X + defaultDuration, p.Y + 0.8),
+        [](note* n, void* arg) {
+            auto self = (arg_t*)arg;
+            self->isNote = true;
+            if (n->selected) {
+                self->isSelected = true;
+            }
+        },
+        &arg);
+    if (arg.isSelected) {
+        return 2;
+    }
+    if (arg.isNote) {
+        return 1;
+    }
+    return 0;
 }
 
 HBB::vec editTable::screenToAbs(int x, int y) {
@@ -306,29 +368,67 @@ int editTable::selectAll() {
 int editTable::clickToSelect(int x, int y) {
     auto p = screenToAbs(x, y);
 
-    auto res = find(
+    struct arg_t {
+        editTable* self;
+        int fetchCount = 0;
+        int processCount = 0;
+    } arg;
+    arg.self = this;
+
+    find(
         p, [](note* n, void* arg) {  //调用HBB搜索
-            auto self = (editTable*)arg;
+            auto self = (arg_t*)arg;
+            ++self->fetchCount;
             if (!n->selected) {  //未选择就加上选择
-                self->selected.insert(n);
-                printf("mgenner:select:%f %f %s duration:%f volume:%d\n", n->begin, n->tone, n->info.c_str(), n->duration, n->volume);
+                ++self->processCount;
+                self->self->selected.insert(n);
                 n->selected = true;
 
-                if (n->info != self->defaultInfo) {
-                    printf("mgenner:use note name:%s\n", n->info.c_str());
-                    self->defaultInfo = n->info;
-                    self->defaultVolume = n->volume;
+                if (n->info != self->self->defaultInfo) {
+                    self->self->defaultInfo = n->info;
                 }
+            }
+        },
+        &arg);
+    updateSelectedStatus();
+    if (arg.processCount > 0) {
+        return 1;
+    }
+    if (arg.fetchCount > 0) {
+        return 0;
+    }
+    return -1;
+}
 
-            } else {
-                self->selected.erase(n);  //第二次点击取消选择
-                printf("mgenner:unselect:%f %f\n", n->begin, n->tone);
+int editTable::clickToUnselect(int x, int y) {
+    auto p = screenToAbs(x, y);
+
+    struct arg_t {
+        editTable* self;
+        int fetchCount = 0;
+        int processCount = 0;
+    } arg;
+    arg.self = this;
+
+    find(
+        p, [](note* n, void* arg) {  //调用HBB搜索
+            auto self = (arg_t*)arg;
+            ++self->fetchCount;
+            if (n->selected) {  //取消选择
+                ++self->processCount;
+                self->self->selected.erase(n);
                 n->selected = false;
             }
         },
-        this);
+        &arg);
     updateSelectedStatus();
-    return res;
+    if (arg.processCount > 0) {
+        return 1;
+    }
+    if (arg.fetchCount > 0) {
+        return 0;
+    }
+    return -1;
 }
 int editTable::selectByArea_unique(int x, int y, int len) {
     auto f = HBB::vec(x, 0);
@@ -871,6 +971,16 @@ void editTable::undo() {
                 timeMap.erase(h->begin);
             } else if (h->method == history::H_TEMPO_DEL) {
                 addTempo(h->begin, h->tempo);
+            } else if (h->method == history::H_MOVE) {
+                for (auto& itn : h->noteStatuses) {
+                    auto p = seekNoteById(itn.id);
+                    if (p) {
+                        p->tone = itn.tone_ori;
+                        p->duration = itn.length_ori;
+                        p->begin = itn.begin_ori;
+                        moveNote(p);
+                    }
+                }
             }
         }
 
@@ -917,6 +1027,16 @@ void editTable::redo() {
                 timeMap.erase(h->begin);
             } else if (h->method == history::H_TEMPO_ADD) {
                 addTempo(h->begin, h->tempo);
+            } else if (h->method == history::H_MOVE) {
+                for (auto& itn : h->noteStatuses) {
+                    auto p = seekNoteById(itn.id);
+                    if (p) {
+                        p->tone = itn.tone_des;
+                        p->duration = itn.length_des;
+                        p->begin = itn.begin_des;
+                        moveNote(p);
+                    }
+                }
             }
         }
 
@@ -1132,4 +1252,203 @@ void editTable::copy() {
     }
 }
 
+void editTable::moveNoteBegin(int x, int y) {
+    moveBufferCheckPassed = false;
+    moveBuffer.clear();
+    moveBuffer_beginPos = screenToAbs(x, y);
+
+    //::__android_log_print(ANDROID_LOG_INFO, "mgenner", "moveBuffer_beginPos:%f %f\n",
+    //                      moveBuffer_beginPos.X,
+    //                      moveBuffer_beginPos.Y);
+    for (auto& it : selected) {
+        moveBuffer_t tmp;
+        tmp.dur = it->duration;
+        tmp.begin = it->begin;
+        tmp.tone = it->tone;
+        tmp.srcNote = it;
+        moveBuffer.push_back(std::move(tmp));
+    }
+}
+void editTable::moveNoteUpdate(int x, int y) {
+    auto p = screenToAbs(x, y);
+    auto delta = p - moveBuffer_beginPos;
+
+    automatic(delta.X, delta.Y);
+    //::__android_log_print(ANDROID_LOG_INFO, "mgenner", "delta:%f %f\n",
+    //                      delta.X,
+    //                      delta.Y);
+
+    bool checkPassed = true;
+    struct arg_t {
+        bool* res;
+        editTable* self;
+        int x;
+        int defaultDelay;
+        stringPool::stringPtr info;
+    } arg;
+    arg.res = &checkPassed;
+    arg.self = this;
+
+    moveBufferCheckPassed = false;
+    for (auto& it : moveBuffer) {
+        it.begin = it.srcNote->begin + delta.X;
+        it.tone = it.srcNote->tone + delta.Y;
+
+        //检查音符重叠
+        arg.defaultDelay = it.dur;
+        arg.x = it.begin;
+        arg.info = it.srcNote->info;
+
+        if (it.begin < 0 || it.tone < 0 || it.tone >= 128) {
+            return;
+        }
+        find(
+            HBB::vec(it.begin, it.tone + 0.1),
+            HBB::vec(it.begin + it.dur, it.tone + 0.8),
+            [](note* n, void* arg) {
+                auto self = (arg_t*)arg;
+                if (n->begin >= (self->x + self->defaultDelay)) {
+                    return;
+                }
+                if ((n->begin + n->duration) <= self->x) {
+                    return;
+                }
+                if (n->info != self->info) {
+                    return;
+                }
+                if (n->selected) {
+                    return;
+                }
+                *(self->res) = false;
+            },
+            &arg);
+        if (!checkPassed) {
+            return;
+        }
+    }
+    moveBufferCheckPassed = true;
+}
+
+void editTable::moveNoteEnd(int x, int y) {
+    moveNoteUpdate(x, y);
+    if (moveBufferCheckPassed) {
+        auto hisptr = std::make_shared<history>();  //插入历史记录
+        hisptr->method = history::H_MOVE;
+        hisptr->noteStatuses.clear();
+        for (auto& it : moveBuffer) {
+            mgnr::noteStatus hn;
+            hn.id = it.srcNote->id;
+
+            hn.begin_ori = it.srcNote->begin;
+            it.srcNote->begin = it.begin;
+            hn.begin_des = it.srcNote->begin;
+
+            hn.tone_ori = it.srcNote->tone;
+            it.srcNote->tone = it.tone;
+            hn.tone_des = it.srcNote->tone;
+
+            hn.length_ori = it.srcNote->duration;
+            it.srcNote->duration = it.dur;
+            hn.length_des = it.srcNote->duration;
+
+            hisptr->noteStatuses.push_back(hn);
+
+            moveNote(it.srcNote);
+        }
+        pushHistory(hisptr);
+    }
+    moveBuffer.clear();
+    moveBufferCheckPassed = false;
+}
+
+void editTable::moveNoteCancel(int x, int y) {
+    moveBuffer.clear();
+    moveBufferCheckPassed = false;
+}
+
+void editTable::scaleNoteBegin() {
+    moveBuffer.clear();
+    scaleCheckPassed = false;
+    for (auto& it : selected) {
+        moveBuffer_t tmp;
+        tmp.dur = it->duration;
+        tmp.begin = it->begin;
+        tmp.tone = it->tone;
+        tmp.srcNote = it;
+        moveBuffer.push_back(std::move(tmp));
+    }
+}
+void editTable::scaleNoteUpdate(double delta) {
+    bool checkPassed = true;
+    struct arg_t {
+        bool* res;
+        editTable* self;
+        int x;
+        int defaultDelay;
+        stringPool::stringPtr info;
+    } arg;
+    arg.res = &checkPassed;
+    arg.self = this;
+
+    scaleCheckPassed = false;
+    for (auto& it : moveBuffer) {
+        it.dur = it.srcNote->duration + delta / noteLength;
+
+        //检查音符重叠
+        arg.defaultDelay = it.dur;
+        arg.x = it.begin;
+        arg.info = it.srcNote->info;
+
+        if (it.begin < 0 || it.tone < 0 || it.dur <= 0 || it.tone >= 128) {
+            return;
+        }
+        find(
+            HBB::vec(it.begin, it.tone + 0.1),
+            HBB::vec(it.begin + it.dur, it.tone + 0.8),
+            [](note* n, void* arg) {
+                auto self = (arg_t*)arg;
+                if (n->begin >= (self->x + self->defaultDelay)) {
+                    return;
+                }
+                if ((n->begin + n->duration) <= self->x) {
+                    return;
+                }
+                if (n->info != self->info) {
+                    return;
+                }
+                if (n->selected) {
+                    return;
+                }
+                *(self->res) = false;
+            },
+            &arg);
+        if (!checkPassed) {
+            return;
+        }
+    }
+    scaleCheckPassed = true;
+}
+
+void editTable::scaleNoteEnd() {
+    if (scaleCheckPassed) {
+        auto hisptr = std::make_shared<history>();  //插入历史记录
+        hisptr->method = history::H_RESIZE;
+        hisptr->noteStatuses.clear();
+        for (auto& it : moveBuffer) {
+            mgnr::noteStatus hn;
+            hn.id = it.srcNote->id;
+
+            hn.length_ori = it.srcNote->duration;
+            it.srcNote->duration = it.dur;
+            hn.length_des = it.srcNote->duration;
+
+            hisptr->noteStatuses.push_back(hn);
+
+            resizeNote(it.srcNote);
+        }
+        pushHistory(hisptr);
+    }
+    moveBuffer.clear();
+    scaleCheckPassed = false;
+}
 }  // namespace mgnr

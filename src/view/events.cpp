@@ -42,42 +42,70 @@ void renderContext::processEvents_mouse() {
                     selectBoxY = event.motion.y;
                     selectBoxXend = event.motion.x;
                     selectBoxYend = event.motion.y;
-                } else if (drawing->clickToSelect(event.motion.x, event.motion.y) <= 0 && drawing->show_edit_window)
-                    drawing->addDisplaied();
+                } else {
+                    if (drawing->inNote(event.motion.x, event.motion.y)) {
+                        drawing->showDisplayBuffer = false;
+                        if (drawing->clickToSelect(event.motion.x, event.motion.y) == 0) {
+                            selectNoteFail = true;
+                            moveNoteX = event.motion.x;
+                            moveNoteY = event.motion.y;
+                        }
+                    } else {
+                        if (drawing->show_edit_window) {
+                            addNoteMode = true;
+                        }
+                    }
+                }
             } else if (SDL_BUTTON_RIGHT == event.button.button) {
                 drawing->clearSelected();
             }
         } else if (event.type == SDL_MOUSEBUTTONUP) {
-            if (selectingByBox && SDL_BUTTON_LEFT == event.button.button) {
-                selectingByBox = false;
-                {
-                    int bx, ex, by, ey;
-                    if (selectBoxX < selectBoxXend) {
-                        bx = selectBoxX;
-                        ex = selectBoxXend;
-                    } else {
-                        ex = selectBoxX;
-                        bx = selectBoxXend;
+            if (SDL_BUTTON_LEFT == event.button.button) {
+                if (selectingByBox) {
+                    selectingByBox = false;
+                    {
+                        int bx, ex, by, ey;
+                        if (selectBoxX < selectBoxXend) {
+                            bx = selectBoxX;
+                            ex = selectBoxXend;
+                        } else {
+                            ex = selectBoxX;
+                            bx = selectBoxXend;
+                        }
+                        if (selectBoxY < selectBoxYend) {
+                            ey = selectBoxY;
+                            by = selectBoxYend;
+                        } else {
+                            by = selectBoxY;
+                            ey = selectBoxYend;
+                        }
+                        auto pb = drawing->screenToAbs(bx, by);
+                        auto pe = drawing->screenToAbs(ex, ey);
+                        drawing->find(
+                            pb, pe, [](mgnr::note* n, void* arg) {  //调用HBB搜索
+                                auto self = (renderContext*)arg;
+                                if (!n->selected) {  //未选择就加上选择
+                                    self->drawing->selected.insert(n);
+                                    n->selected = true;
+                                }
+                            },
+                            this);
                     }
-                    if (selectBoxY < selectBoxYend) {
-                        ey = selectBoxY;
-                        by = selectBoxYend;
-                    } else {
-                        by = selectBoxY;
-                        ey = selectBoxYend;
+                } else {
+                    if (drawing->show_edit_window) {
+                        if (moveNoteMode) {
+                            drawing->moveNoteEnd(event.motion.x, event.motion.y);
+                        } else if (addNoteMode) {
+                            drawing->addDisplaied();
+                        } else if (selectNoteFail) {
+                            drawing->clickToUnselect(event.motion.x, event.motion.y);
+                        }
                     }
-                    auto pb = drawing->screenToAbs(bx, by);
-                    auto pe = drawing->screenToAbs(ex, ey);
-                    drawing->find(
-                        pb, pe, [](mgnr::note* n, void* arg) {  //调用HBB搜索
-                            auto self = (renderContext*)arg;
-                            if (!n->selected) {  //未选择就加上选择
-                                self->drawing->selected.insert(n);
-                                n->selected = true;
-                            }
-                        },
-                        this);
                 }
+                addNoteMode = false;
+                moveNoteMode = false;
+                selectNoteFail = false;
+                drawing->showDisplayBuffer = true;
             }
         } else if (event.type == SDL_MOUSEMOTION) {  //移动鼠标
             //printf("mouse:%d %d\n", event.motion.x, event.motion.y);
@@ -85,6 +113,18 @@ void renderContext::processEvents_mouse() {
             if (selectingByBox) {
                 selectBoxXend = event.motion.x;
                 selectBoxYend = event.motion.y;
+            } else {
+                if (moveNoteMode) {
+                    drawing->moveNoteUpdate(event.motion.x, event.motion.y);
+                } else {
+                    if (selectNoteFail) {
+                        if (abs(event.motion.x - moveNoteX) > 10 ||
+                            abs(event.motion.y - moveNoteY) > 10) {
+                            moveNoteMode = true;
+                            drawing->moveNoteBegin(event.motion.x, event.motion.y);
+                        }
+                    }
+                }
             }
         } else if (event.type == SDL_MOUSEWHEEL) {
             if (mouse_y > windowHeight - 30) {

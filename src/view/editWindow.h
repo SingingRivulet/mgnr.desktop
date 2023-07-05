@@ -83,6 +83,7 @@ class editWindow : public mgnr::synth {
     void drawTempoPadd() override;
     void drawScroll() override;
     void drawCaption(float p, const std::string& s) override;
+    void drawMoveTarget(int fx,int fy,int tx,int ty)override;
     void draw();
     bool drawUI();
     void drawSynthUI();

@@ -35,17 +35,30 @@ struct displayBuffer_t {
 struct clipboard_t {
     std::vector<displayBuffer_t> noteTemplate;
 };
+
+struct noteStatus {
+    int id;
+    double length_ori;
+    double length_des;
+    double tone_ori;
+    double tone_des;
+    double begin_ori;
+    double begin_des;
+};
 struct history : public std::enable_shared_from_this<history> {
     enum {
-        H_NOTE_ADD,
-        H_NOTE_DEL,
-        H_TEMPO_ADD,
-        H_TEMPO_DEL
+        H_NOTE_ADD = 1,
+        H_NOTE_DEL = 2,
+        H_TEMPO_ADD = 3,
+        H_TEMPO_DEL = 4,
+        H_RESIZE = 5,
+        H_MOVE = 6
     } method;
     std::list<int> noteIds;  //音符，如果是添加的话，将会存在
     int begin;               //起始时间
     double tempo;            //添加删除速度时使用
     std::list<std::unique_ptr<noteInfo>> notes;
+    std::list<noteStatus> noteStatuses;
 };
 class editTable : public midiMap {
    public:
@@ -57,9 +70,11 @@ class editTable : public midiMap {
     virtual void drawNote_begin() = 0;
     virtual void drawNote(int fx, int fy, int tx, int ty, int volume, const stringPool::stringPtr& info, bool selected, bool onlydisplay = false) = 0;
     virtual void drawNote_end() = 0;
+    virtual void drawMoveTarget(int fx, int fy, int tx, int ty);
 
     virtual void editStatusUpdate() = 0;
 
+    int inNote(int x, int y);
     std::map<std::string, int> trackNameMapper;
     std::map<int, int> trackInsMapper;
     void resetTrackMapper();
@@ -71,6 +86,7 @@ class editTable : public midiMap {
     note* clickToAdd(int x, int y);
     void addDisplaied();
     int clickToSelect(int x, int y);
+    int clickToUnselect(int x, int y);
     void clickToSetTempo(int x, int y, double tp);
     void clickToRemoveTempo(int x, int y);
     void clickToAddDescription(int x, int y, const std::function<void(int tick)>& callback);
@@ -205,8 +221,29 @@ class editTable : public midiMap {
     bool instrumentLoaded[128];
 
    public:
+    bool showDisplayBuffer = true;
     std::vector<displayBuffer_t> displayBuffer;
     clipboard_t* clipboard;
+
+    struct moveBuffer_t {
+        float begin;
+        float tone;
+        float dur;
+        note* srcNote;
+    };
+    std::vector<moveBuffer_t> moveBuffer;
+    HBB::vec moveBuffer_beginPos;
+    bool moveBufferCheckPassed = false;
+    void moveNoteBegin(int x, int y);
+    void moveNoteUpdate(int x, int y);
+    void moveNoteEnd(int x, int y);
+    void moveNoteCancel(int x, int y);
+
+    bool scaleCheckPassed = false;
+    void scaleNoteBegin();
+    void scaleNoteUpdate(double delta);
+    void scaleNoteEnd();
+
     void undo();
     void redo();
     void copy();

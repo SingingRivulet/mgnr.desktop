@@ -247,6 +247,9 @@ void renderContext::ui_loop() {
                     }
                 }
 
+                if (ImGui::Checkbox("对齐到网格", &drawing->automaticX)) {
+                }
+
                 if (ImGui::InputInt("TPQ", &drawing->TPQ)) {
                     if (drawing->TPQ > 4096) {
                         drawing->TPQ = 4096;

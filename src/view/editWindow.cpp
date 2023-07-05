@@ -191,6 +191,11 @@ void editWindow::drawTableRaw(int from, int to, int left, int right, int t) {
     }
 }
 
+void editWindow::drawMoveTarget(int fx, int fy, int tx, int ty) {
+    SDL_SetRenderDrawColor(parent->renderer, 192, 192, 192, 192);
+    SDL_RenderDrawLine(parent->renderer, fx, fy, tx, ty);
+}
+
 void editWindow::drawTimeCol(float p) {
     SDL_Rect rect;
     rect.x = p;
