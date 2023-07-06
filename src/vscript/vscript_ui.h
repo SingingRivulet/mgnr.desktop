@@ -14,7 +14,6 @@ struct script_ui : public script {
     void draw(bool* showing = nullptr);
     virtual void addNodeAt(port_output* p) = 0;
     virtual void onAddNode() = 0;
-    virtual void checkFocus() = 0;
 };
 
 }  // namespace mgnr::vscript

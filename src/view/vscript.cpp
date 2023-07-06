@@ -36,7 +36,6 @@ void renderContext::module_nodeEditor() {
                 ImGui::EndPopup();
             }
         }
-        checkfocus();
         ImGui::End();
     }
 }
@@ -131,12 +130,8 @@ void renderContext::vscript_t::addNodeAt(mgnr::vscript::port_output* p) {
     addNodeAtPort = p;
     addNodeAtPort_window_pos = ImVec2(global->mouse_x, global->mouse_y);
 }
-void renderContext::vscript_t::checkFocus() {
-    global->checkfocus();
-}
 void renderContext::vscript_t::onAddNode() {
     if (ImGui::BeginPopup("添加节点")) {
-        global->checkfocus();
         for (auto& it : scriptClass_view) {
             if (ImGui::MenuItem(it->title.c_str())) {
                 auto p = it->callback(this);
@@ -154,7 +149,6 @@ void renderContext::vscript_t::onAddNode() {
     }
 
     if (ImGui::BeginPopupContextWindow()) {
-        global->checkfocus();
         if (!menuPopup) {
             addNodeAtPort_window_pos = ImGui::GetMousePos();
         }

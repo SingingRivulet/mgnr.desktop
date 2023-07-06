@@ -37,7 +37,6 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                 windowFlag |= ImGuiWindowFlags_NoMove;
             }
             if (ImGui::Begin(title, &showSpec, windowFlag)) {
-                global->checkfocus();
                 //ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
                 ImGuiIO& io = ImGui::GetIO();
                 //ImGui::SetWindowFocus();
@@ -107,7 +106,6 @@ struct node_spectrumViewer : public mgnr::vscript::node_ui {
                 ImGui::SetNextWindowSize(ImVec2(925, 500), ImGuiCond_FirstUseEver);
                 snprintf(title, sizeof(title), "频谱显示(时刻)##%d", this->windowId);
                 if (ImGui::Begin(title, nullptr, windowFlag)) {
-                    global->checkfocus();
                     //ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
                     ImVec2 p0 = ImGui::GetCursorScreenPos() + ImVec2(20, 20);
                     int w = ImGui::GetWindowWidth() - 40;

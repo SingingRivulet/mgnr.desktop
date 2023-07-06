@@ -4,7 +4,6 @@ void editWindow::drawSynthUI() {
     if (show_synth_window) {
         ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
         if (ImGui::Begin("合成器设置", &show_synth_window)) {
-            parent->checkfocus();
 
             if (ImGui::BeginTabBar("合成器设置##tab")) {
                 if (ImGui::BeginTabItem("虚拟乐器##tab")) {

@@ -176,19 +176,6 @@ struct renderContext : public mgnr::clipboard_t {
     void module_loop();
     void shutdownModules();
 
-    inline void checkfocus(bool checkFocused = true, bool checkHover = true) {
-        if (checkFocused) {
-            if (ImGui::IsItemFocused() ||
-                ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
-                focusCanvas = false;
-            }
-        }
-        if (checkHover) {
-            if (ImGui::IsWindowHovered(ImGuiFocusedFlags_RootAndChildWindows)) {
-                hoverCanvas = false;
-            }
-        }
-    }
     //节点编辑器
     struct vclass_lua {
         bool needFullInput = true;
@@ -218,7 +205,6 @@ struct renderContext : public mgnr::clipboard_t {
         mgnr::vscript::port_output* addNodeAtPort = nullptr;
         ImVec2 addNodeAtPort_window_pos;
         void addNodeAt(mgnr::vscript::port_output* p) override;
-        void checkFocus() override;
     } vscript;
     std::vector<std::string> scriptConsole{};
     void addVClass(std::shared_ptr<vclass_t> p);

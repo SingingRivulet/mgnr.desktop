@@ -521,7 +521,6 @@ void renderContext::module_show() {
                 lua_settop(lua_mainthread, 0);
             }
         }
-        checkfocus();
         ImGui::End();
         if (!showing) {
             rmlist.push_back(it);

@@ -107,10 +107,11 @@ void renderContext::loop() {
     hoverCanvas = true;
     playStep();
     draw();
-    if (focusCanvas) {
+    auto& io = ImGui::GetIO();
+    if (!io.WantCaptureKeyboard) {
         processEvents_keyboard();
     }
-    if (hoverCanvas) {
+    if (!io.WantCaptureMouse) {
         processEvents_mouse();
     }
     events.clear();

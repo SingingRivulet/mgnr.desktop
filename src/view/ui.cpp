@@ -201,7 +201,6 @@ void renderContext::ui_loop() {
     }
     menuHeight = ImGui::CalcWindowNextAutoFitSize(ImGui::GetCurrentWindow()).y;
     ImGui::SetWindowSize(ImVec2(windowWidth, menuHeight));
-    checkfocus();
     ImGui::End();
     ImGui::PopStyleVar();
 
@@ -330,7 +329,6 @@ void renderContext::ui_loop() {
                     drawing->rebuildNoteLen();
                 }
             }
-            checkfocus();
             ImGui::End();
         }
         if (drawing->show_trackSelect_window) {
@@ -364,7 +362,6 @@ void renderContext::ui_loop() {
                     }
                 }
             }
-            checkfocus();
             ImGui::End();
         }
         if (show_tempoSet_bar) {
@@ -393,7 +390,6 @@ void renderContext::ui_loop() {
                                                 show_tempoSet_bar_pos_y);
                 }
             }
-            checkfocus();
             ImGui::End();
         }
         if (show_tempoAdd_bar) {
@@ -418,7 +414,6 @@ void renderContext::ui_loop() {
                     }
                 }
             }
-            checkfocus();
             ImGui::End();
         }
         if (show_midiDescription_bar) {
@@ -475,7 +470,6 @@ void renderContext::ui_loop() {
                         });
                 }
             }
-            checkfocus();
             ImGui::End();
         }
         if (show_descriptionEdit_bar) {
@@ -493,7 +487,6 @@ void renderContext::ui_loop() {
                                             midiDescriptionBuffer_content);
                 }
             }
-            checkfocus();
             ImGui::End();
         }
         if (show_descriptionAdd_bar) {
@@ -511,7 +504,6 @@ void renderContext::ui_loop() {
                                             midiDescriptionBuffer_content);
                 }
             }
-            checkfocus();
             ImGui::End();
         }
 
@@ -538,7 +530,6 @@ void renderContext::ui_loop() {
                     ImGui::SetTooltip("ctrl+c");
                 }
             }
-            checkfocus();
             ImGui::End();
         }
         if (show_trackMap_window) {
@@ -620,7 +611,6 @@ void renderContext::ui_loop() {
                     ImGui::OpenPopup("selectInstrument");
                 }
                 if (ImGui::BeginPopup("selectInstrument")) {
-                    checkfocus();
                     ImGui::Text("选择乐器");
                     ImGui::Separator();
                     for (int i = 0; i < 128; ++i) {
@@ -653,7 +643,6 @@ void renderContext::ui_loop() {
                     trackMapBuffer_init(tn, ti);
                 }
             }
-            checkfocus();
             ImGui::End();
         }
     }
