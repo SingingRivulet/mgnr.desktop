@@ -9,7 +9,7 @@ void renderContext::processEvents_mouse() {
     if (drawing == nullptr) {
         return;
     }
-    for (auto& event : events) {
+    for (auto& event : events_mouse) {
         if (event.type == SDL_MOUSEBUTTONDOWN) {  //按键
 
             if (event.motion.y < 40 + menuHeight) {  //小于40+menuHeight是marker
@@ -118,13 +118,6 @@ void renderContext::processEvents_mouse() {
                         }
                     }
                 }
-                addNoteMode = false;
-                moveNoteMode = false;
-                selectNoteFail = false;
-                resizeNoteMode = false;
-                resizeNoteReady = false;
-                drawing->showDisplayBuffer = true;
-                drawing->previewNote_off();
             }
         } else if (event.type == SDL_MOUSEMOTION) {  //移动鼠标
             //printf("mouse:%d %d\n", event.motion.x, event.motion.y);
@@ -208,9 +201,6 @@ void renderContext::processEvents_mouse() {
                 }
             } else {
             }
-        } else if (event.type == SDL_KEYUP) {
-        }
-        if (event.type == SDL_KEYDOWN) {
         }
     }
 }
@@ -219,7 +209,7 @@ void renderContext::processEvents_keyboard() {
     if (drawing == nullptr) {
         return;
     }
-    for (auto& event : events) {
+    for (auto& event : events_keyboard) {
         if (event.type == SDL_KEYDOWN) {
             switch (event.key.keysym.sym) {
                 case SDLK_UP:

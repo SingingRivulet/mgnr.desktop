@@ -71,6 +71,7 @@ void renderContext::toneMapInit() {
 
 void renderContext::loop() {
     SDL_Event event;
+    bool mouseUp = false;
     while (SDL_PollEvent(&event)) {
         ImGui_ImplSDL2_ProcessEvent(&event);
         if (event.type == SDL_QUIT) {
@@ -98,9 +99,14 @@ void renderContext::loop() {
         } else if (event.type == SDL_MOUSEMOTION) {
             mouse_x = event.motion.x;
             mouse_y = event.motion.y;
-            events.push_back(event);
+            events_mouse.push_back(event);
+        } else if (event.type == SDL_MOUSEBUTTONUP) {
+            mouseUp = true;
+            events_mouse.push_back(event);
+        } else if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEWHEEL) {
+            events_mouse.push_back(event);
         } else {
-            events.push_back(event);
+            events_keyboard.push_back(event);
         }
     }
     focusCanvas = true;
@@ -114,7 +120,20 @@ void renderContext::loop() {
     if (!io.WantCaptureMouse) {
         processEvents_mouse();
     }
-    events.clear();
+    events_mouse.clear();
+    events_keyboard.clear();
+
+    if (mouseUp) {
+        addNoteMode = false;
+        moveNoteMode = false;
+        selectNoteFail = false;
+        resizeNoteMode = false;
+        resizeNoteReady = false;
+        if (drawing) {
+            drawing->showDisplayBuffer = true;
+            drawing->previewNote_off();
+        }
+    }
 }
 
 void renderContext::draw() {

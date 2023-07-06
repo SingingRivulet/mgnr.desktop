@@ -57,7 +57,8 @@ struct renderContext : public mgnr::clipboard_t {
     int mouse_y;
     bool focusCanvas;
     bool hoverCanvas;
-    std::vector<SDL_Event> events;
+    std::vector<SDL_Event> events_mouse;
+    std::vector<SDL_Event> events_keyboard;
     bool button_ctrl = false;
     bool button_shift = false;
     void loop();
