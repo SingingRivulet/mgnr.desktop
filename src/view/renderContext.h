@@ -91,6 +91,7 @@ struct renderContext : public mgnr::clipboard_t {
     bool resizeNotehover = false;
     bool resizeNoteReady = false;
     bool selectNoteFail = false;
+    bool dragMode = false;
     //////////////////////////////////////////////////////////////////
     ///ui相关
 

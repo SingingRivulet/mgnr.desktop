@@ -249,6 +249,8 @@ class editTable : public midiMap {
     void copy();
     bool pasteMode = false;
     bool editStatus = false;
+    double moveWindowStartX = 0;
+    double moveWindowStartY = 0;
     inline bool isEdited() {
         return editStatus;
     }

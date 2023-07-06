@@ -129,6 +129,7 @@ void renderContext::loop() {
         selectNoteFail = false;
         resizeNoteMode = false;
         resizeNoteReady = false;
+        dragMode = false;
         if (drawing) {
             drawing->showDisplayBuffer = false;
             drawing->previewNote_off();

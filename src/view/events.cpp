@@ -3,6 +3,8 @@
 void renderContext::processEvents_mouse() {
     if (resizeNoteReady || resizeNotehover || resizeNoteMode) {
         ImGui::SetMouseCursor(4);
+    } else if (dragMode) {
+        ImGui::SetMouseCursor(2);
     } else {
         ImGui::SetMouseCursor(0);
     }
@@ -60,12 +62,20 @@ void renderContext::processEvents_mouse() {
                         }
                     } else {
                         if (drawing->show_edit_window) {
+                            //编辑模式
                             addNoteMode = true;
                             drawing->showDisplayBuffer = true;
                             auto p = drawing->screenToAbs(mouse_x, mouse_y);
                             if (!drawing->pasteMode) {
                                 drawing->previewNote_on(p.Y, drawing->defaultVolume);
                             }
+                        } else {
+                            //拖动模式
+                            dragMode = true;
+                            moveNoteX = event.motion.x;
+                            moveNoteY = event.motion.y;
+                            drawing->moveWindowStartX = drawing->lookAtX;
+                            drawing->moveWindowStartY = drawing->lookAtY;
                         }
                     }
                 }
@@ -138,16 +148,23 @@ void renderContext::processEvents_mouse() {
                     if (!drawing->pasteMode) {
                         drawing->previewNote_on(p.Y, drawing->defaultVolume);
                     }
+                } else if (dragMode) {
+                    double deltaX = (mouse_x - moveNoteX) / drawing->noteLength;
+                    double deltaY = (mouse_y - moveNoteY) / drawing->noteHeight;
+                    drawing->lookAtX = drawing->moveWindowStartX - deltaX;
+                    drawing->lookAtY = drawing->moveWindowStartY + deltaY;
                 } else {
                     if (selectNoteFail) {
-                        if (abs(event.motion.x - moveNoteX) > 10 ||
-                            abs(event.motion.y - moveNoteY) > 10) {
-                            if (resizeNoteReady) {
-                                resizeNoteMode = true;
-                                drawing->scaleNoteBegin();
-                            } else {
-                                moveNoteMode = true;
-                                drawing->moveNoteBegin(event.motion.x, event.motion.y);
+                        if (drawing->show_edit_window) {
+                            if (abs(event.motion.x - moveNoteX) > 10 ||
+                                abs(event.motion.y - moveNoteY) > 10) {
+                                if (resizeNoteReady) {
+                                    resizeNoteMode = true;
+                                    drawing->scaleNoteBegin();
+                                } else {
+                                    moveNoteMode = true;
+                                    drawing->moveNoteBegin(event.motion.x, event.motion.y);
+                                }
                             }
                         }
                     }
@@ -184,9 +201,9 @@ void renderContext::processEvents_mouse() {
                         }
                     } else {
                         if (event.wheel.y < 0) {
-                            drawing->lookAtX += 200 / drawing->noteLength;
+                            drawing->lookAtX += 20 / drawing->noteLength;
                         } else if (event.wheel.y > 0) {
-                            drawing->lookAtX -= 200 / drawing->noteLength;
+                            drawing->lookAtX -= 20 / drawing->noteLength;
                         }
                     }
                 } else {
@@ -292,6 +309,9 @@ void renderContext::processEvents_keyboard() {
                     if (button_ctrl) {
                         createWindow();
                     }
+                    break;
+                case SDLK_e:
+                    drawing->show_edit_window = !drawing->show_edit_window;
                     break;
                 case SDLK_EQUALS:
                     if (drawing->show_edit_window) {

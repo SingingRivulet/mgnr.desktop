@@ -506,7 +506,7 @@ void renderContext::ui_loop() {
             }
             ImGui::End();
         }
-
+        /*
         if (!drawing->selected.empty() && drawing->show_edit_window) {
             ImGui::SetNextWindowPos(ImVec2(windowWidth / 2, windowHeight / 2), ImGuiCond_FirstUseEver);
             if (ImGui::Begin("编辑音符",
@@ -532,6 +532,7 @@ void renderContext::ui_loop() {
             }
             ImGui::End();
         }
+        */
         if (show_trackMap_window) {
             ImGui::SetNextWindowSize(ImVec2(615, 478), ImGuiCond_FirstUseEver);
             if (ImGui::Begin("音轨映射表", &show_trackMap_window)) {
