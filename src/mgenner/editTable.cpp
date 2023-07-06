@@ -970,6 +970,14 @@ void editTable::undo() {
                 timeMap.erase(h->begin);
             } else if (h->method == history::H_TEMPO_DEL) {
                 addTempo(h->begin, h->tempo);
+            } else if (h->method == history::H_RESIZE) {
+                for (auto& itn : h->noteStatuses) {
+                    auto p = seekNoteById(itn.id);
+                    if (p) {
+                        p->duration = itn.length_ori;
+                        resizeNote(p);
+                    }
+                }
             } else if (h->method == history::H_MOVE) {
                 for (auto& itn : h->noteStatuses) {
                     auto p = seekNoteById(itn.id);
@@ -1026,6 +1034,14 @@ void editTable::redo() {
                 timeMap.erase(h->begin);
             } else if (h->method == history::H_TEMPO_ADD) {
                 addTempo(h->begin, h->tempo);
+            } else if (h->method == history::H_RESIZE) {
+                for (auto& itn : h->noteStatuses) {
+                    auto p = seekNoteById(itn.id);
+                    if (p) {
+                        p->duration = itn.length_des;
+                        resizeNote(p);
+                    }
+                }
             } else if (h->method == history::H_MOVE) {
                 for (auto& itn : h->noteStatuses) {
                     auto p = seekNoteById(itn.id);
