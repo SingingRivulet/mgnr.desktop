@@ -420,10 +420,10 @@ void editWindow::scrollBuilder_onGetAllNotePos(mgnr::note* n) {
     rect.h = 1;
     if (n->tone > nmin && n->tone < nmax) {
         rect.y = 30 - ((n->tone - nmin) * 30) / hlen;
-        rect.w = (n->duration * 1024) / noteTimeMax;
+        rect.w = round((n->duration * 1024.) / noteTimeMax);
         if (rect.w <= 0)
             rect.w = 1;
-        rect.x = (n->begin * 1024) / noteTimeMax;
+        rect.x = round((n->begin * 1024.) / noteTimeMax);
 
         SDL_SetRenderDrawColor(parent->renderer, 128, 128, 128, SDL_ALPHA_OPAQUE);
         SDL_RenderFillRect(parent->renderer, &rect);

@@ -130,6 +130,7 @@ void renderContext::loop() {
         resizeNoteMode = false;
         resizeNoteReady = false;
         dragMode = false;
+        moveScreenWithPlaying = false;
         if (drawing) {
             drawing->showDisplayBuffer = false;
             drawing->previewNote_off();
