@@ -221,7 +221,7 @@ class editTable : public midiMap {
     bool instrumentLoaded[128];
 
    public:
-    bool showDisplayBuffer = true;
+    bool showDisplayBuffer = false;
     std::vector<displayBuffer_t> displayBuffer;
     clipboard_t* clipboard;
 

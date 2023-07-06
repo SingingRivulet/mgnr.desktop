@@ -126,7 +126,7 @@ void renderContext::ui_loop() {
             ImGui::SameLine();
             ImGui::SameLine();
             if (ImGui::Checkbox("框选模式", &selectByBox)) {
-                drawing->clearSelected();
+                //drawing->clearSelected();
                 if (focus_note) {
                     drawing->infoFilter = drawing->defaultInfo;
                     drawing->show_trackSelect_window = true;

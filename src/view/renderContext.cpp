@@ -130,7 +130,7 @@ void renderContext::loop() {
         resizeNoteMode = false;
         resizeNoteReady = false;
         if (drawing) {
-            drawing->showDisplayBuffer = true;
+            drawing->showDisplayBuffer = false;
             drawing->previewNote_off();
         }
     }

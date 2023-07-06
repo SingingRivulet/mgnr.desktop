@@ -61,8 +61,11 @@ void renderContext::processEvents_mouse() {
                     } else {
                         if (drawing->show_edit_window) {
                             addNoteMode = true;
+                            drawing->showDisplayBuffer = true;
                             auto p = drawing->screenToAbs(mouse_x, mouse_y);
-                            drawing->previewNote_on(p.Y, drawing->defaultVolume);
+                            if (!drawing->pasteMode) {
+                                drawing->previewNote_on(p.Y, drawing->defaultVolume);
+                            }
                         }
                     }
                 }
@@ -132,7 +135,9 @@ void renderContext::processEvents_mouse() {
                     drawing->scaleNoteUpdate(event.motion.x - moveNoteX);
                 } else if (addNoteMode) {
                     auto p = drawing->screenToAbs(mouse_x, mouse_y);
-                    drawing->previewNote_on(p.Y, drawing->defaultVolume);
+                    if (!drawing->pasteMode) {
+                        drawing->previewNote_on(p.Y, drawing->defaultVolume);
+                    }
                 } else {
                     if (selectNoteFail) {
                         if (abs(event.motion.x - moveNoteX) > 10 ||
@@ -255,6 +260,7 @@ void renderContext::processEvents_keyboard() {
                     break;
                 case SDLK_v:
                     drawing->pasteMode = true;
+                    drawing->showDisplayBuffer = true;
                     selectByBox = false;
                     break;
                 case SDLK_z:
