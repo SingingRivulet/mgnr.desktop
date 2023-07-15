@@ -72,6 +72,9 @@ void player::playStart() {
 }
 
 void player::previewNote_on(int pitch, int v) {
+    if (pitch <= 0 || pitch >= 128) {
+        return;
+    }
     if (previewNote.playing) {
         if (previewNote.tone != pitch) {
             noteOff(&previewNote);
@@ -79,6 +82,7 @@ void player::previewNote_on(int pitch, int v) {
             return;
         }
     }
+    printf("previewNote_on:%d\n", pitch);
     previewNote.tone = pitch;
     previewNote.info = defaultInfo;
     previewNote.volume = v;
@@ -91,6 +95,7 @@ void player::previewNote_on(int pitch, int v) {
 }
 void player::previewNote_off() {
     if (previewNote.playing) {
+        printf("previewNote_off:%d\n", previewNote.tone);
         previewNote.playing = false;
         noteOff(&previewNote);
     }

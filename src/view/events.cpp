@@ -152,7 +152,7 @@ void renderContext::processEvents_mouse() {
                     int deltaX_screen = mouse_x - moveNoteX;
                     double deltaY = (mouse_y - moveNoteY) / drawing->noteHeight;
                     drawing->lookAtY = drawing->moveWindowStartY + deltaY;
-                    if ((!drawing->playingStatus) || abs(deltaX_screen) > 30 || moveScreenWithPlaying) {
+                    if ((!drawing->playingStatus) || abs(deltaX_screen) > 200 || moveScreenWithPlaying) {
                         double deltaX = (deltaX_screen) / drawing->noteLength;
                         drawing->lookAtX = drawing->moveWindowStartX - deltaX;
                         moveScreenWithPlaying = true;
