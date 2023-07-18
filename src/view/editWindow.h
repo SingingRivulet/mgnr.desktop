@@ -59,6 +59,9 @@ class editWindow : public mgnr::synth {
     inline void setMidiFilePath(const std::string& name) {
         midiFilePath = name;
         fileName = getFileName(name.c_str());
+        char buf[64];
+        snprintf(buf, sizeof(buf), "##%x,%d", mgnr::hash(fileName.c_str()), rand());
+        fileName += buf;
         needUpdateWindowTitle = true;
     }
     std::string fileName = "";
@@ -83,7 +86,7 @@ class editWindow : public mgnr::synth {
     void drawTempoPadd() override;
     void drawScroll() override;
     void drawCaption(float p, const std::string& s) override;
-    void drawMoveTarget(int fx,int fy,int tx,int ty)override;
+    void drawMoveTarget(int fx, int fy, int tx, int ty) override;
     void draw();
     bool drawUI();
     void drawSynthUI();

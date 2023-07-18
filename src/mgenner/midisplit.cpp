@@ -92,16 +92,6 @@ void synth::splitTracks() {
     int tnum = tracks.size();
     printf("mgenner:track num:%d\n", tnum);
 }
-static int hash(const char* str) {
-    unsigned int seed = 131;  // 31 131 1313 13131 131313 etc..
-    unsigned int hash = 0;
-
-    while (*str) {
-        hash = hash * seed + (*str++);
-    }
-
-    return (hash & 0x7FFFFFFF);
-}
 void synth::toHashSeries(std::string& out) {
     std::vector<std::pair<int, int> > ser;
     toHashSeries(ser);
