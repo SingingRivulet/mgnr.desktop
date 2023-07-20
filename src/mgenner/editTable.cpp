@@ -550,7 +550,7 @@ void editTable::clickToDisplay(int x, int y) {
         for (auto& it : clipboard->noteTemplate) {
             arg.defaultDuration = it.dur * TPQ;
             arg.x = p.X + it.begin * TPQ;
-            arg.info = it.info;
+            arg.info = strPool.create(it.info);
             find(
                 HBB::vec(p.X + it.begin * TPQ, p.Y + it.tone + 0.1),
                 HBB::vec(p.X + it.begin * TPQ + it.dur * TPQ, p.Y + it.tone + 0.8),
@@ -586,7 +586,7 @@ void editTable::clickToDisplay(int x, int y) {
             displayBuffer_t tmp;
             tmp.begin = p.X + it.begin * TPQ;
             tmp.tone = p.Y + it.tone;
-            tmp.info = it.info;
+            tmp.info = strPool.create(it.info);
             tmp.dur = it.dur * TPQ;
             tmp.volume = it.volume;
             displayBuffer.push_back(tmp);
@@ -1266,10 +1266,10 @@ void editTable::copy() {
     //创建剪贴板
     clipboard->noteTemplate.clear();
     for (auto it : selected) {
-        displayBuffer_t tmp;
+        clipboardBuffer_t tmp;
         tmp.begin = (it->begin - minTime) / TPQ;
         tmp.tone = it->tone - minTone;
-        tmp.info = it->info;
+        tmp.info = it->info.c_str();
         tmp.dur = it->duration / TPQ;
         tmp.volume = it->volume;
         clipboard->noteTemplate.push_back(tmp);

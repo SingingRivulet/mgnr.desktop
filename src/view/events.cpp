@@ -280,9 +280,11 @@ void renderContext::processEvents_keyboard() {
                     drawing->copy();
                     break;
                 case SDLK_v:
-                    drawing->pasteMode = true;
-                    drawing->showDisplayBuffer = true;
-                    selectByBox = false;
+                    if(drawing->show_edit_window){
+                        drawing->pasteMode = true;
+                        drawing->showDisplayBuffer = true;
+                        selectByBox = false;
+                    }
                     break;
                 case SDLK_z:
                     if (button_ctrl) {

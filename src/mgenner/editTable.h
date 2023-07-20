@@ -32,8 +32,17 @@ struct displayBuffer_t {
     int volume;
     stringPool::stringPtr info;
 };
+
+struct clipboardBuffer_t {
+    float begin;
+    float tone;
+    float dur;
+    int volume;
+    std::string info;
+};
+
 struct clipboard_t {
-    std::vector<displayBuffer_t> noteTemplate;
+    std::vector<clipboardBuffer_t> noteTemplate;
 };
 
 struct noteStatus {
